@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ==================== Core Configuration ====================
 PROJECT="kmdo"
-DOWNLOAD_BASE_URL="https://github.com/kumose/kmdo/releases/download"
+DOWNLOAD_BASE_URL="https://docs.kumose.cc/kmdo/dl/"
 DEFAULT_VERSION="v1.0.0"
 KMDO_HOME="$HOME/.kmdo"
 BIN_DIR="$KMDO_HOME/bin"
