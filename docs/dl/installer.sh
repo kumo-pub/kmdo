@@ -102,8 +102,8 @@ extract_local_package() {
 download_remote_binary() {
   ARCH=$(detect_arch)
   OS=$(detect_os)
-  BINARY_NAME="${PROJECT}-${OS}-${ARCH}"
-  DOWNLOAD_URL="${DOWNLOAD_BASE_URL}/${VERSION}/${BINARY_NAME}.tar.gz"  # Match release package name
+  BINARY_NAME="${PROJECT}-${VERSION}-${OS}-${ARCH}"
+  DOWNLOAD_URL="${DOWNLOAD_BASE_URL}/${BINARY_NAME}.tar.gz"  # Match release package name
 
   info "Downloading remote package: $DOWNLOAD_URL"
   # Download tar package
