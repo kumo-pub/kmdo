@@ -25,6 +25,10 @@ const sidebars = {
       label: '快速开始',
       collapsible: true,
       collapsed: true,
+      "link": {
+        "type": "generated-index",
+        "title": "快速开始"
+      },
       items: [
         'start/install'
       ],
@@ -34,6 +38,10 @@ const sidebars = {
       label: '命令行',
       collapsible: true,
       collapsed: true,
+      "link": {
+        "type": "generated-index",
+        "title": "命令行"
+      },
       items: [
         'cmd/env',
         'cmd/pkg'
