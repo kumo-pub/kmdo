@@ -27,7 +27,8 @@ const sidebars = {
       collapsed: true,
       "link": {
         "type": "generated-index",
-        "title": "快速开始"
+        "title": "快速开始",
+        "slug": "/quick-start" 
       },
       items: [
         'start/install'
@@ -40,7 +41,8 @@ const sidebars = {
       collapsed: true,
       "link": {
         "type": "generated-index",
-        "title": "命令行"
+        "title": "命令行",
+          "slug": "/cmd" 
       },
       items: [
         'cmd/env',
