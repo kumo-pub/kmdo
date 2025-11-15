@@ -1,15 +1,108 @@
-<!-- start/install.mdx -->
 ---
 slug: start/install
 ---
 
 # kmdo 安装
 
-## 方式1：二进制安装
+kmdo 基于 Go 开发，支持二进制快速安装与源码编译安装两种方式，适配主流 Unix 类系统（Linux/macOS），以下是详细步骤与补充说明：
+
+## 方式1：二进制安装（推荐，秒级完成）
+
+二进制安装无需编译，直接部署预构建好的可执行文件，适合绝大多数用户快速上手。
+
+1. ****远程一键安装****
+
+```shell
+wget -qO- https://docs.kumose.cc/kmdo/dl/installer.sh | bash
+```
+
+脚本功能：自动检测系统架构（x86_64/arm64）、下载匹配的二进制包、配置环境变量、完成安装校验
+环境变量加载：安装完成后，执行以下命令手动加载环境变量（无需重启 Shell）：
+
+```shell
+# Bash/Zsh 终端
+source ~/.bashrc  # 若为 Zsh 则替换为 source ~/.zshrc
+```
+
+2. 本地指定版本安装
+
+适合需要安装特定版本、离线环境或自定义部署的场景：
+
+1. 下载官方安装器脚本：
+
+```shell
+wget https://docs.kumose.cc/kmdo/dl/installer.sh
+```
+2. 下载对应版本的二进制包（需从官方下载页获取，格式为 ```kmdo-{版本}-{系统}-{架构}.tar.gz```
+
+3. 执行本地安装命令：
+
+```shell
+# 赋予脚本执行权限
+chmod +x installer.sh
+# 指定本地包路径安装
+./installer.sh --local path/to/your/kmdo-xxx.tar.gz
+```
+- 说明：``--local`` 参数后需填写二进制包的绝对路径或相对路径，脚本会自动解压并完成部署
+
+## 方式2：源码安装（适合二次开发 / 定制化需求）
+
+1. 克隆源码仓库
 
 
-jiushi 
+```shell
+git clone https://github.com/kumose/kmdo.git
+cd kmdo  # 进入源码目录
+```
+
+- 可选：切换到指定版本分支（如需安装非主分支版本）：
+
+```shell
+git checkout v1.0.0  # 替换为目标版本号
+```
+
+2. 编译项目
+
+依赖 Go 1.24+，执行编译命令：
 
 
-## 方式2：源码安装
+```shell
+make release
+```
+
+- 编译输出：生成的二进制包会存放于 dist/ 目录下，文件名格式为 `kmdo-{版本}-{系统}-{架构}.tar.gz`
+
+3. 执行安装
+
+使用源码自带的安装器脚本完成部署：
+
+```shell
+./scripts/installer.sh --local dist/kmdo-xxx.tar.gz
+```
+- 注意：替换命令中的 kmdo-xxx.tar.gz 为实际编译生成的包文件名
+
+## 验证安装
+
+安装完成后，执行以下命令验证是否成功：
+
+```shell
+# 查看 kmdo 版本（输出版本号即代表安装成功）
+`kmdo --version`
+# 查看帮助信息（验证命令行功能正常）
+`kmdo --help`
+```
+
+- 若提示 kmdo: command not found：请重新执行环境变量加载命令（参考方式 1 的「环境变量加载」步骤），或检查终端是否为新启动的会话
+- 若源码编译失败：优先检查 Go 版本是否满足 1.24+，执行 `go version` 可查看当前版本
+
+## 安装信息
+
+****默认安装路径****
+- 核心程序：/usr/local/bin/kmdo（系统级可执行文件，全局可调用）
+- 配置目录：~/.kmdo/（用户级配置、基线数据、依赖缓存等，隔离式存储，不污染系统环境）
+- 安装器日志：~/.kmdo/installer.log（安装过程日志，便于排查安装故障）
+
+***卸载方式***
+
+
 
