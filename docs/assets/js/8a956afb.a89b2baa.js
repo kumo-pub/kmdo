@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkwebsit=globalThis.webpackChunkwebsit||[]).push([[7035],{1929:t=>{t.exports=JSON.parse('{"categoryGeneratedIndex":{"title":"\u5feb\u901f\u5f00\u59cb","slug":"/quick-start","permalink":"/kmdo/docs/quick-start","sidebar":"kmdoSidebar","navigation":{"next":{"title":"kmdo \u5b89\u88c5","permalink":"/kmdo/docs/quick-start/install"}}}}')}}]);

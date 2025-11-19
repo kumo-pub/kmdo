@@ -27,7 +27,8 @@ const sidebars = {
       collapsed: true,
       "link": {
         "type": "generated-index",
-        "title": "快速开始"
+        "title": "快速开始",
+        "slug": "/quick-start"
       },
       items: [
         'start/install'
@@ -40,11 +41,30 @@ const sidebars = {
       collapsed: true,
       "link": {
         "type": "generated-index",
-        "title": "命令行"
+        "title": "命令行",
+        "slug": "/cmd"
       },
       items: [
         'cmd/env',
-        'cmd/pkg'
+        'cmd/pkg',
+        'cmd/history',
+        'cmd/tree',
+        'cmd/version',
+        {
+          type: 'category',
+          label: 'mirror 命令',
+          collapsible: true,
+          collapsed: true,
+          "link": {
+            "type": "generated-index",
+            "title": "mirror",
+            "slug": "/cmd/mirror"
+          },
+          items: [
+              'cmd/mirror',
+              'cmd/mirror/init'
+          ],
+        }
       ],
     }
 
