@@ -1,0 +1,102 @@
+---
+slug: /cmd/mirror/status
+---
+
+# kmdo mirror status 命令文档
+## 概述
+kmdo mirror status 命令用于查看镜像仓库的详细状态，支持全量信息展示或按筛选条件（HEAD哈希、未跟踪文件、未提交文件）精准查看，同时提供简洁输出模式适配快速查看与自动化场景，帮助用户实时掌握镜像仓库的变更状态。
+
+## 命令结构
+kmdo mirror status [FLAGS]
+
+## 核心功能
+1. 展示镜像仓库全量状态（HEAD提交哈希、未提交修改文件、未跟踪文件）。
+2. 支持按条件筛选输出（仅显示HEAD哈希/未跟踪文件/未提交文件）。
+3. 提供简洁输出模式（--simple），简化格式便于快速阅读或脚本解析。
+4. 自动识别仓库整体状态（Clean/Dirty），直观提示是否存在未提交或未跟踪内容。
+
+## 命令 Flags 说明
+| Flag | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| --hash | 布尔值 | false | 仅显示当前HEAD提交的哈希值 |
+| --untracked | 布尔值 | false | 仅显示未跟踪的文件列表 |
+| --uncommitted | 布尔值 | false | 仅显示已修改但未提交的文件列表 |
+| --simple | 布尔值 | false | 启用简洁输出格式（适配快速查看/脚本解析） |
+
+## 详细使用场景与说明
+### 场景1：查看全量状态（默认模式）
+#### 功能
+输出镜像仓库完整状态，包括HEAD哈希、未提交文件、未跟踪文件及整体清洁度（Clean/Dirty）。
+#### 用法
+kmdo mirror status
+#### 输出示例
+=== Mirror Repository Status ===
+Current HEAD Hash: a1b2c3d4e5f67890abcdef1234567890abcdef12
+
+Uncommitted Modified Files (2):
+  - config.yaml
+  - src/utils.go
+
+Untracked Files (1):
+  - logs/debug.log
+
+Status: Dirty (contains uncommitted or untracked files)
+
+### 场景2：简洁模式查看全量状态
+#### 功能
+以极简格式输出核心状态信息，减少冗余内容，适合快速确认仓库状态。
+#### 用法
+kmdo mirror status --simple
+#### 输出示例
+Mirror Status (Simple Mode)
+HEAD Hash: a1b2c3d4e5f67890abcdef1234567890abcdef12
+Uncommitted Files: 2
+Untracked Files: 1
+Overall Status: Dirty
+
+### 场景3：筛选查看指定信息
+#### 功能
+按需求仅输出目标信息（如仅HEAD哈希、仅未提交文件），减少干扰。
+#### 用法
+# 仅查看HEAD哈希
+kmdo mirror status --hash
+
+# 仅查看未跟踪文件（简洁模式）
+kmdo mirror status --untracked --simple
+
+# 同时查看未提交和未跟踪文件
+kmdo mirror status --uncommitted --untracked
+#### 输出示例
+# 仅HEAD哈希（默认格式）
+Mirror Status (Filtered)
+Current HEAD Hash:
+  a1b2c3d4e5f67890abcdef1234567890abcdef12
+
+# 仅未跟踪文件（简洁模式）
+Mirror Status (Simple Mode)
+Untracked Files (1): ["logs/debug.log"]
+
+# 同时查看未提交和未跟踪文件（默认格式）
+Mirror Status (Filtered)
+Uncommitted Modified Files (2):
+  - config.yaml
+  - src/utils.go
+
+Untracked Files (1):
+  - logs/debug.log
+
+## 输出字段说明
+| 输出字段 | 含义 |
+|----------|------|
+| HEAD Hash | 当前仓库HEAD指针指向的提交哈希值（唯一标识当前代码版本） |
+| Uncommitted Modified Files | 已修改但未执行git commit的文件列表（数量+路径） |
+| Untracked Files | 未被git跟踪的文件列表（数量+路径，即未执行git add的文件） |
+| Overall Status | 仓库整体状态：Clean（无未提交/未跟踪文件）、Dirty（存在未提交/未跟踪文件） |
+
+## 注意事项
+1. 筛选Flags（--hash/--untracked/--uncommitted）可组合使用，仅输出选中的信息；无筛选Flag时默认输出全量信息。
+2. --simple标志对所有输出模式生效，简化格式统一为“键值对/简短列表”，便于脚本通过字符串解析提取信息。
+3. 若对应筛选项无内容（如无未提交文件），会显示“ No files”或“none”，避免空输出导致误解。
+4. 命令依赖mr.GetMirrorStatus()获取状态数据，需确保当前镜像仓库配置有效（可通过kmdo mirror show确认），否则可能返回“failed to get mirror status”错误。
+
+要不要我帮你整理一份 **纯文本格式的kmdo-mirror-status命令筛选组合速查表**，包含所有常用筛选组合的用法和输出示例，方便你快速对应场景使用？

@@ -1,0 +1,113 @@
+---
+slug: /cmd/mirror/set
+---
+
+# kmdo mirror set 命令文档
+## 概述
+kmdo mirror set 命令用于配置镜像工作区，支持两种核心场景：设置自定义镜像目录及关联远程仓库、重置为官方预配置的镜像配置，同时提供强制操作、SSH协议切换等灵活选项，适配手动配置与自动化脚本场景。
+
+## 命令结构
+```shell
+kmdo mirror set <local-dir> [remote] [FLAGS]
+kmdo mirror set --reset [FLAGS]
+```
+
+## 核心功能
+1. 自定义镜像配置：指定本地目录（必填）和远程URL（可选），设置为默认镜像工作区。
+2. 重置官方镜像：通过--reset标志快速切换到官方预配置的目录和远程源，支持SSH协议切换。
+3. 自动化适配：--force标志跳过交互式确认，适合脚本批量执行。
+
+## 命令 Flags 说明
+| Flag | 简写 | 类型 | 默认值 | 描述 |
+|------|------|------|--------|------|
+| --reset | -r | 布尔值 | false | 重置镜像配置为官方默认值，覆盖现有自定义设置 |
+| --ssh | -s | 布尔值 | false | 仅配合--reset使用，重置时使用官方SSH远程源（默认使用HTTP） |
+| --force | -f | 布尔值 | false | 强制执行操作（设置/重置），跳过交互式确认（适用于自动化脚本） |
+
+## 详细使用场景与说明
+### 场景1：设置自定义镜像（指定本地目录，可选关联远程）
+#### 功能
+配置自定义本地镜像目录作为默认工作区，可选择关联远程Git仓库（HTTP/SSH协议均支持）。
+#### 用法
+# 仅设置本地工作区（不关联远程）
+```shell
+kmdo mirror set <local-dir>
+```
+# 设置本地工作区并关联远程仓库
+```shell
+kmdo mirror set <local-dir> <remote-url>
+```
+#### 示例
+# 仅设置本地镜像目录
+kmdo mirror set /tmp/my-custom-mirror
+
+# 设置本地目录并关联SSH远程仓库
+kmdo mirror set /tmp/my-custom-mirror git@github.com:kumose-go/mirror-repo.git
+
+# 设置本地目录并关联HTTP远程仓库
+kmdo mirror set /tmp/my-custom-mirror https://github.com/kumose-go/mirror-repo.git
+
+#### 执行逻辑
+1. 自动将本地目录转换为绝对路径，避免相对路径导致的配置不一致。
+2. 持久化配置到本地，更新默认镜像工作区及远程源（无远程则仅更新工作区）。
+3. 输出配置成功信息，明确展示工作区路径及关联的远程地址（若有）。
+
+### 场景2：重置为官方镜像配置（--reset模式）
+#### 功能
+放弃现有自定义配置，切换到预配置的官方镜像目录和远程源，支持HTTP/SSH两种协议。
+#### 用法
+# 重置为官方镜像（默认HTTP远程，需确认）
+kmdo mirror set --reset
+
+# 重置为官方SSH镜像（需确认）
+kmdo mirror set --reset --ssh
+
+# 强制重置为官方镜像（跳过确认，适合自动化）
+kmdo mirror set --reset --force
+
+# 强制重置为官方SSH镜像
+kmdo mirror set --reset --ssh --force
+
+#### 示例
+# 交互式重置为官方HTTP镜像
+kmdo mirror set -r
+
+# 强制重置为官方SSH镜像（无确认步骤）
+kmdo mirror set -r -s -f
+
+#### 执行逻辑
+1. 非--force模式下，弹出确认提示（展示官方目录路径），用户确认后执行；--force模式直接跳过确认。
+2. 根据--ssh标志选择远程源：开启则使用官方SSH地址，否则使用HTTP地址。
+3. 持久化官方配置，覆盖现有自定义设置，输出重置成功信息。
+
+## 输出说明
+### 自定义配置成功
+# 仅设置工作区
+✅ Mirror workspace set: /tmp/my-custom-mirror (no remote source associated)
+
+# 设置工作区+远程
+✅ Mirror configuration updated
+  Local workspace: /tmp/my-custom-mirror
+  Associated remote: git@github.com:kumose-go/mirror-repo.git
+
+### 官方重置成功
+Successfully reset to official mirror
+  Local workspace: /Users/username/.kmdo/official-mirror
+  Associated remote: https://github.com/kumose-go/official-mirror.git
+
+### 错误输出
+# 缺少本地目录（非重置模式）
+invalid arguments: local directory not specified, see 'kmdo mirror set --help' for usage
+
+# 路径转换失败
+failed to convert local path to absolute: /invalid/path, please check path validity
+
+# 用户取消操作
+operation aborted by user
+
+## 注意事项
+1. 自定义配置时，local-dir为必填项，remote-url可选；未指定remote时，仅设置工作区，不关联远程源。
+2. --ssh标志仅在--reset模式下生效，单独使用会被忽略。
+3. --force标志适用于自动化脚本，执行前需确认配置正确性，避免误操作覆盖重要设置。
+4. 配置会持久化到本地（由mr.SetConfig实现），后续镜像操作（如pull/push）将默认使用当前配置的工作区和远程源。
+5. 本地目录路径会自动转换为绝对路径，确保配置在不同目录下执行时的一致性。

@@ -62,7 +62,13 @@ const sidebars = {
           },
           items: [
               'cmd/mirror',
-              'cmd/mirror/init'
+              'cmd/mirror/init',
+              'cmd/mirror/set',
+              'cmd/mirror/show',
+              'cmd/mirror/status',
+              'cmd/mirror/index',
+              'cmd/mirror/list',
+              'cmd/mirror/publish'
           ],
         }
       ],
