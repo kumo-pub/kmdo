@@ -61,14 +61,20 @@ const sidebars = {
             "slug": "/cmd/mirror"
           },
           items: [
-              'cmd/mirror',
-              'cmd/mirror/init',
-              'cmd/mirror/set',
-              'cmd/mirror/show',
-              'cmd/mirror/status',
-              'cmd/mirror/index',
-              'cmd/mirror/list',
-              'cmd/mirror/publish'
+            'cmd/mirror',
+            'cmd/mirror/init',
+            'cmd/mirror/set',
+            'cmd/mirror/show',
+            'cmd/mirror/status',
+            'cmd/mirror/index',
+            'cmd/mirror/list',
+            'cmd/mirror/publish',
+            'cmd/mirror/baseline',
+            'cmd/mirror/tag',
+            'cmd/mirror/pull',
+            'cmd/mirror/push',
+            'cmd/mirror/merge',
+            'cmd/mirror/clone'
           ],
         }
       ],
