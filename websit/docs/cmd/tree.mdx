@@ -1,0 +1,93 @@
+---
+slug: /cmd/tree
+---
+# kmdo tree 命令文档
+
+## 概述
+kmdo tree 命令用于以美观的层级树状结构展示 kmdo 的所有命令及子命令，基于 pterm 库实现格式化输出，支持显示命令描述、切换彩色/黑白输出，帮助用户快速梳理命令体系。
+
+## 命令结构
+kmdo tree [FLAGS]
+
+## 核心功能
+1. 以层级树状结构可视化所有 kmdo 命令（含子命令）
+2. 可切换显示/隐藏命令的简短描述
+3. 支持开启/关闭彩色输出（默认开启）
+4. 自动过滤隐藏命令（Hidden=true 的命令不显示）
+
+## 命令 Flags 说明
+| Flag | 简写 | 类型 | 默认值 | 描述 |
+|------|------|------|--------|------|
+| --desc | -d | 布尔值 | true | 显示每个命令的简短描述（--desc=false 隐藏描述） |
+| --color | -c | 布尔值 | true | 开启彩色输出（默认开启） |
+| --no-color | - | 布尔值 | false | 关闭彩色输出（优先级高于 --color，开启后强制黑白显示） |
+
+## 详细命令说明
+
+### 1. 基础使用（默认输出）
+#### 功能
+以彩色格式输出完整命令树，包含所有非隐藏命令及对应简短描述，按层级展示命令关系。
+
+#### 用法
+kmdo tree
+
+#### 输出说明
+- 输出结构包含：
+  1. 黄色标题栏："📊 Command Tree (Full Feature List)"
+  2. 青色分隔线（50个等号）
+  3. 层级树状命令列表（不同层级命令有不同颜色标识）
+  4. 青色分隔线
+  5. 灰色提示信息："Hint: Use 'up [command] --help' to see detailed usage for a specific command"
+- 颜色规则：
+  - 根命令（level 0）：亮蓝色 + 加粗
+  - 一级子命令（level 1）：亮绿色 + 加粗
+  - 二级及以上子命令（level ≥2）：亮黄色
+
+### 2. 隐藏命令描述
+#### 功能
+仅展示命令名称和层级结构，不显示简短描述，输出更简洁。
+
+#### 用法
+kmdo tree --desc=false
+# 或简写
+kmdo tree -d=false
+
+### 3. 关闭彩色输出
+#### 功能
+以黑白格式输出命令树，适配无颜色支持的终端环境。
+
+#### 用法
+# 方式1：使用 --no-color 标志（推荐）
+kmdo tree --no-color
+
+# 方式2：设置 --color=false
+kmdo tree --color=false
+# 或简写
+kmdo tree -c=false
+
+## 命令树层级标识规则
+| 标识符号 | 含义 |
+|----------|------|
+| ├──      | 当前层级非最后一个命令的分支 |
+| └──      | 当前层级最后一个命令的分支 |
+| │        | 非最后层级的对齐符号（表示上一层级有后续命令） |
+| （空格）  | 非最后层级的空白对齐（表示上一层级无后续命令） |
+
+## 注意事项
+1. 隐藏命令（代码中设置 Hidden=true 的命令）不会在树状图中显示，仅展示可见命令。
+2. --no-color 标志优先级高于 --color，同时设置时以 --no-color 为准。
+3. 命令树递归展示所有子命令，层级深度无限制，自动适配命令嵌套结构。
+4. 输出风格依赖 pterm 库（v0.12+），确保环境中已正确引入该依赖。
+
+## 示例输出片段（默认彩色带描述）
+📊 Command Tree (Full Feature List)
+==================================================
+kmdo - Root command for kmdo system
+├── env - Manage kmdo system environment variables
+│   ├── show - show kmdo system environment variables
+│   ├── integrate - Integrate kmdo environment variables
+│   └── init - Initialize or reload kmdo environment variables
+├── history - Display or clean the historical execution record of kmdo
+└── tree - Print the complete command tree (beautified with pterm)
+==================================================
+Hint: Use 'up [command] --help' to see detailed usage for a specific command
