@@ -1,0 +1,120 @@
+---
+slug: /cmd/mirror/list
+---
+# kmdo mirror list 命令文档
+## 概述
+kmdo mirror list 命令用于列出镜像索引中所有已注册的组件，支持按隐藏（hide）和废弃（deprecate）状态筛选结果，默认显示可见且包含废弃状态的组件，输出内容包含组件名称、所有者、状态及描述等核心信息，便于快速盘点镜像内组件情况。
+
+## 命令结构
+kmdo mirror list [FLAGS]
+
+## 核心功能
+1. 列出镜像索引中符合筛选条件的所有组件。
+2. 支持控制是否显示隐藏组件（--hide/-H）和废弃组件（--deprecate/-d）。
+3. 以表格形式格式化输出组件信息，包含名称、所有者、隐藏状态、废弃状态及描述，清晰易读。
+4. 输出符合条件的组件总数，方便统计盘点。
+
+## 命令 Flags 说明
+| Flag | 简写 | 类型 | 默认值 | 描述 |
+|------|------|------|--------|------|
+| --hide | -H | 布尔值 | false | 包含隐藏组件（默认仅显示可见组件） |
+| --deprecate | -d | 布尔值 | true | 包含废弃组件（默认显示废弃组件；设为false时隐藏废弃组件） |
+
+## 详细使用场景与说明
+### 场景1：默认列出组件（显示可见组件，包含废弃组件）
+#### 功能
+按默认规则列出组件：仅显示未隐藏的组件，同时包含其中已标记为废弃的组件。
+#### 用法
+kmdo mirror list
+#### 输出示例
+=====================================================================================
+KUMO Mirror Index Component List
+=====================================================================================
+
+NAME                 OWNER           HIDE       DEPRECATE   DESCRIPTION
+-------------------------------------------------------------------------------------
+component-a          team-dev        No         No          Core service component
+component-b          team-test       No         Yes         Legacy test component (deprecated)
+component-c          team-data       No         No          Data processing component
+
+Total components: 3
+
+### 场景2：包含隐藏组件一起列出
+#### 功能
+列出所有组件（包括隐藏和非隐藏），默认仍包含废弃组件。
+#### 用法
+kmdo mirror list --hide
+# 或简写
+kmdo mirror list -H
+#### 输出示例
+=====================================================================================
+KUMO Mirror Index Component List
+=====================================================================================
+
+NAME                 OWNER           HIDE       DEPRECATE   DESCRIPTION
+-------------------------------------------------------------------------------------
+component-a          team-dev        No         No          Core service component
+component-b          team-test       No         Yes         Legacy test component (deprecated)
+component-c          team-data       No         No          Data processing component
+component-d          team-infra      Yes        No          Internal infrastructure component (hidden)
+
+Total components: 4
+
+### 场景3：排除废弃组件，仅显示正常组件
+#### 功能
+列出未隐藏且未废弃的组件（仅显示正常可用的组件）。
+#### 用法
+kmdo mirror list --deprecate=false
+# 或简写
+kmdo mirror list -d=false
+#### 输出示例
+=====================================================================================
+KUMO Mirror Index Component List
+=====================================================================================
+
+NAME                 OWNER           HIDE       DEPRECATE   DESCRIPTION
+-------------------------------------------------------------------------------------
+component-a          team-dev        No         No          Core service component
+component-c          team-data       No         No          Data processing component
+
+Total components: 2
+
+### 场景4：列出所有组件（包含隐藏和废弃）
+#### 功能
+无筛选限制，列出镜像索引中所有组件，无论隐藏或废弃状态。
+#### 用法
+kmdo mirror list --hide --deprecate=true
+# 或简写
+kmdo mirror list -H -d=true
+#### 输出示例
+=====================================================================================
+KUMO Mirror Index Component List
+=====================================================================================
+
+NAME                 OWNER           HIDE       DEPRECATE   DESCRIPTION
+-------------------------------------------------------------------------------------
+component-a          team-dev        No         No          Core service component
+component-b          team-test       No         Yes         Legacy test component (deprecated)
+component-c          team-data       No         No          Data processing component
+component-d          team-infra      Yes        No          Internal infrastructure component (hidden)
+component-e          team-legacy     Yes        Yes         Obsolete legacy component (hidden & deprecated)
+
+Total components: 5
+
+## 输出字段说明
+| 输出字段 | 含义 |
+|----------|------|
+| NAME | 组件名称（唯一标识） |
+| OWNER | 组件所属团队/个人 |
+| HIDE | 组件是否隐藏（Yes/No） |
+| DEPRECATE | 组件是否废弃（Yes/No） |
+| DESCRIPTION | 组件功能描述信息 |
+| Total components | 符合筛选条件的组件总数 |
+
+## 注意事项
+1. Flags 组合规则：--hide 控制是否显示隐藏组件，--deprecate 控制是否显示废弃组件，二者可独立组合使用，覆盖所有筛选场景。
+2. 默认行为说明：未加任何 Flags 时，仅显示“未隐藏”组件，且“包含”其中的废弃组件（即 --hide=false、--deprecate=true）。
+3. 字段长度限制：输出表格中各字段已固定宽度（如 NAME 最长20字符、DESCRIPTION 最长30字符），超长内容会被自动截断，确保表格格式整齐。
+4. 依赖说明：命令依赖 mr.IndexList() 接口获取组件数据，需确保镜像索引配置有效（可通过 kmdo mirror show 确认），否则可能返回“index list failed”错误。
+
+要不要我帮你整理一份 **纯文本格式的kmdo-mirror-list筛选组合速查表**，包含所有常用筛选组合的用法、效果说明和输出示例，方便你快速对应场景使用？
