@@ -46,7 +46,7 @@ const sidebars = {
       },
       items: [
         'cmd/env',
-        'cmd/pkg',
+        'cmd/pkg1',
         'cmd/history',
         'cmd/tree',
         'cmd/version',
@@ -75,6 +75,26 @@ const sidebars = {
             'cmd/mirror/push',
             'cmd/mirror/merge',
             'cmd/mirror/clone'
+          ],
+        },
+        {
+          type: 'category',
+          label: 'pkg 命令',
+          collapsible: true,
+          collapsed: true,
+          "link": {
+            "type": "generated-index",
+            "title": "pkg",
+            "slug": "/cmd/pkg"
+          },
+          items: [
+            'cmd/pkg/init',
+            'cmd/pkg/config',
+            'cmd/pkg/build',
+            'cmd/pkg/release',
+            'cmd/pkg/mcp',
+            'cmd/pkg/check',
+            'cmd/pkg/healthcheck'
           ],
         }
       ],
