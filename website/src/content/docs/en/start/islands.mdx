@@ -1,0 +1,41 @@
+---
+title: Islands architecture
+description: Learn about how Kumo's islands architecture concated Kmdo.
+i18nReady: true
+---
+
+Kumo has pioneered a new backend architecture called the **Islands Architecture**. Its
+core idea is to make each component of the search system as independent as possible. Each component
+can run as a standalone service while also collaborating through common low-level interfaces. Communication 
+standards include SQL, HTTP, and Protobuf, allowing components to be flexibly plugged in and combined. 
+A Kumo cluster can be deployed independently as a complete search system or integrated as a module within 
+existing services, enabling unified management of componentized services.
+
+
+## A brief history
+Initially, in the process of supporting large-scale backend businesses, we encountered a series of challenges: 
+intricate dependencies between services, where changes required modifications to multiple associated services; 
+stringent platform adaptation constraints, leading to high deployment costs across different environments; 
+prolonged iteration cycles due to lengthy coordination and testing processes; and frequent repetitive development,
+making it difficult to reuse core capabilities.
+
+
+To address these issues, we launched explorations into componentization and unified management. In early 
+attempts, the team stripped away multi-layered framework dependencies from business logic, aiming to simplify 
+hierarchies and stabilize core interfaces. However, due to insufficient understanding of business scenarios and
+underlying systems, coupled with a lack of mature dependency governance experience, several attempts failed to
+meet expectations.
+
+
+Subsequently, we conducted systematic reviews of the problems arising from each attempt, sorting out issues in
+interface design, dependency splitting, adaptation and compatibility, and gradually accumulated experience ranging
+from top-level interface abstraction to fine-grained dependency management. Meanwhile, we clarified key prerequisites:
+ the system architecture must be highly abstract to adapt to diverse business scenarios, a comprehensive grasp of
+ service workflows and interaction logic is essential, and precise control over core details is required.
+This series of continuous practices ultimately precipitated core features such as componentized splitting, 
+localized function isolation, and selective module activation, laying a solid foundation for the subsequent 
+design and implementation of the `Island Architecture.`
+
+## What is an island?
+
+

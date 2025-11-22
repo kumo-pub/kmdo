@@ -1,0 +1,53 @@
+---
+title: Why Kmdo?
+description: Kmdo is a CLI tool for Kumo Search ecosystem that integrates development, release, and deployment.
+i18nReady: true
+---
+
+**Kmdo** is a command-line tool (CLI) dedicated to the Kumo Search ecosystem, designed to manage the full lifecycle of Kumo-related projects — integrating core capabilities such as development and debugging, version release, environment deployment, and configuration management. Developers can focus on business logic without switching between multiple toolchains or dealing with cumbersome environment setup and operations.
+
+## Overview
+
+Kmdo is a unified CLI tool for development and deployment in the Kumo ecosystem and backend services (C++ / Go / Kumo Search). It provides unified dependency management, batch build and release, multi-environment deployment, and traceable operations, allowing developers to work efficiently and standardly across the project lifecycle, independent of any platform constraints.
+
+## Capabilities
+
+Kmdo integrates the full process of development, release, deployment, and operations for Kumo Search and backend services into unified CLI commands, covering the following key areas:
+
+### Backend C/C++ Dependency Management
+
+At project startup, Kmdo automatically generates a unified dependency configuration, managing versions, feature options, compilation macros, and build parameters for all third-party libraries. It automatically resolves dependency trees to ensure that each module uses consistent library versions and options. Team members on different machines only need to run a single command to obtain an identical dependency environment and build result, ensuring a consistent development baseline.
+
+### Unified Build
+
+During the build phase, Kmdo uses a unified YAML configuration file to describe the entire build process, including dependency versions, compilation options, build parameters, and binary upload destinations. After the build, the artifacts are automatically uploaded to specified binary repositories such as GitHub, GitLab, internal enterprise Git, or Kmup, ensuring consistency and traceability of build outputs across the team.
+
+### Cluster Deployment
+
+During deployment, Kmdo distributes and starts services based on the build artifacts. The deployment process strictly follows the development baseline, ensuring that all components from development to production use the same dependencies and build outputs, achieving reproducible end-to-end deployment.
+
+### Monitoring and Logging
+
+At service startup, Kmdo automatically integrates common monitoring tools like Prometheus according to configuration, collecting metrics and logs from each service instance for unified monitoring and traceable runtime status.
+
+### Platform Integration
+
+Kmdo can operate independently to perform the full process of dependency management, build, distribution, deployment, and monitoring without relying on any platform, enabling standardized development and operations. It can also be embedded into existing platforms to execute tasks under platform scheduling, achieving seamless cooperation for resource management, service startup, and log collection. This dual-mode design supports both quick standalone usage and integration in large teams or enterprise environments, improving development and operational efficiency.
+
+### Ecosystem Interoperability
+
+Kmdo deeply integrates Kumo Search core services, enabling index operations, data synchronization, and query testing directly from the command line. It supports a plugin mechanism for installing third-party Kumo ecosystem tools, such as performance monitoring or data migration plugins. Additionally, Kmdo seamlessly interacts with tools like Kumo Dashboard and Kumo SDK, enabling data interoperability and cross-tool collaboration for complex business scenarios.
+
+## Design Principles
+
+### Platform Independence
+
+Kmdo can perform the complete process from dependency management, build, distribution, deployment, to monitoring without relying on any platform. It runs consistently and reproducibly across local environments, cloud testing environments, or production clusters.
+
+### Embeddable
+
+Kmdo can also be embedded as a component into existing toolchains, executing tasks according to platform schedules for automated management and unified operations.
+
+### Ease of Use
+
+All operations are performed via a unified CLI interface, following standardized workflows to reduce cross-environment collaboration complexity and ease onboarding for team members.
