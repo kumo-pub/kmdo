@@ -1,0 +1,23 @@
+src
+├── assets
+│   └── houston.webp
+├── content
+│   └── docs
+│       ├── en
+│       │   ├── guides
+│       │   │   └── example.md
+│       │   ├── index.mdx
+│       │   └── reference
+│       │       ├── code.mdx
+│       │       └── example.md
+│       ├── index.mdx
+│       └── zh-CN
+│           ├── guides
+│           │   └── example.md
+│           ├── index.mdx
+│           └── reference
+│               ├── code.mdx
+│               └── example.md
+└── content.config.ts
+
+9 directories, 11 files

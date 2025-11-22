@@ -1,0 +1,43 @@
+---
+title: Example Code
+description: A reference page in my new Starlight docs site.
+---
+
+## code hight
+
+
+asd
+
+```c++
+    // vector.h
+    int a = a + 1;
+
+    class Vector {
+    public:
+        Vector() = default;
+    
+    private:
+        void    *_ptr{nullptr};
+        size_t   _size{0};
+    }
+```
+
+```diff lang = "c++"
+    int a = a + 1;
+
+    class Vector {
+    public:
+-       Vector() = default;
++       Vector() {};
+    
+    private:
+        void    *_ptr{nullptr};
+        size_t   _size{0};
+    }
+```
+
+```bash
+// scan.sh
+# scan dir
+ls anv
+```

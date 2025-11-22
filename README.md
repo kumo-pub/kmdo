@@ -3,3 +3,5 @@
 ```
 npm run build
 ```
+
+npm init vitepress@latest
