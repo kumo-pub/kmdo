@@ -31,6 +31,7 @@ const sidebars = {
         "slug": "/quick-start"
       },
       items: [
+        'start/intro',
         'start/install'
       ],
     },
