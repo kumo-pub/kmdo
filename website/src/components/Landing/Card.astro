@@ -14,7 +14,7 @@ export type Props = Parameters<typeof StarlightCard>[0];
 		color: var(--sl-color-white);
 	}
 	:global(:root[data-theme='light']) .landing-card {
-		--card-bg: rgba(255, 255, 255, 0.8);
+		--card-bg: rgba(227, 226, 230, 0.8);
 	}
 
 	.landing-card :global(.card) {
@@ -42,12 +42,12 @@ export type Props = Parameters<typeof StarlightCard>[0];
 	.landing-card :global(.card) {
 		--sl-card-bg: var(--sl-color-blue-low);
 		--sl-card-border: var(--sl-color-blue-high);
-		--landing-card-accent: hsl(165, 90%, 46%);
+		--landing-card-accent: hsl(224, 95%, 16%);
 	}
 
 	.landing-card:nth-child(2n) :global(.card) {
-		--sl-card-bg: var(--sl-color-red-low);
-		--sl-card-border: var(--sl-color-red-high);
-		--landing-card-accent: var(--sl-color-red);
+		--sl-card-bg: var(--sl-color-gray-3);
+		--sl-card-border: var(--sl-color-gray-7);
+		--landing-card-accent: var(--sl-color-gray-5);
 	}
 </style>

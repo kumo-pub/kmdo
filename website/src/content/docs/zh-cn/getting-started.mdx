@@ -28,5 +28,35 @@ import ListCard from '~/components/Landing/ListCard.astro'
 import SplitCard from '~/components/Landing/SplitCard.astro'
 import Discord from '~/components/Landing/Discord.astro'
 
-索引页面
+<CardGrid>
+  <Card title="使用Kmdo能做什么?" icon="laptop">
+    初探 [Kmdo](/zh-cn/start/why-kmdo/) 了解kmdo的功能和特性!
+  </Card>
+
+  <Card title="体验之旅" icon="star">
+    通过我们引导教程 [发布一个应用](/zh-cn/start/why-kmdo/) 体验使用kmdo管理应用开发、构建、发布、部署等阶段的功能.
+  </Card>
+
+  <SplitCard title="开启一个新项目" icon="rocket">
+    ```sh
+    # create a new project with npm
+    kmdo kmpkg create nlp_segment
+    ```
+    
+    我们的 [安装教程](/zh-cn/start/why-kmdo/) 按逐步介绍创建工程、构建工程、、发布功能等环节给你.
+  </SplitCard>
+
+  <ListCard title="资源" icon="open-book">
+    - [kmdo特性](/zh-cn/start/why-kmdo/)
+    - [群岛架构](/zh-cn/start/island/)
+    - [kmdo组件](/en/basics/astro-components/)
+  </ListCard>
+
+  <ListCard title="更多" icon="puzzle">
+    - [安装问题](/zh-cn/start/why-kmdo/)
+    - [使用问题](/zh-cn/start/why-kmdo/)
+    - [功能咨询](/zh-cn/start/why-kmdo/)
+    - [建议反馈](/zh-cn/start/why-kmdo/)
+  </ListCard>
+</CardGrid>
 

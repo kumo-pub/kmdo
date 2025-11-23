@@ -28,5 +28,37 @@ import ListCard from '~/components/Landing/ListCard.astro'
 import SplitCard from '~/components/Landing/SplitCard.astro'
 import Discord from '~/components/Landing/Discord.astro'
 
-index pages
+
+<CardGrid>
+  <Card title="What can you do with Kmdo?" icon="laptop">
+    Explore [Kmdo](/en/start/why-kmdo/) to understand its features and capabilities!
+  </Card>
+
+  <Card title="Guided Tour" icon="star">
+    Follow our guided tutorial [Release an App](/en/start/why-kmdo/) to experience how Kmdo manages development, build, release, and deployment stages.
+  </Card>
+
+  <SplitCard title="Start a New Project" icon="rocket">
+    ```sh
+    # create a new project with npm
+    kmdo kmpkg create nlp_segment
+    ```
+    
+    Our [Installation Guide](/en/start/why-kmdo/) walks you through project creation, building, and release steps.
+  </SplitCard>
+
+  <ListCard title="Resources" icon="open-book">
+    - [Kmdo Features](/en/start/why-kmdo/)
+    - [Island Architecture](/en/start/island/)
+    - [Kmdo Components](/en/basics/astro-components/)
+  </ListCard>
+
+  <ListCard title="More" icon="puzzle">
+    - [Installation Issues](/en/start/why-kmdo/)
+    - [Usage Questions](/en/start/why-kmdo/)
+    - [Feature Consultation](/en/start/why-kmdo/)
+    - [Feedback & Suggestions](/en/start/why-kmdo/)
+  </ListCard>
+</CardGrid>
+
 
