@@ -1,0 +1,45 @@
+---
+title: CMD kmdo completion power-shell
+sidebar:
+  label: kmdo completion-power-shell
+description: 'Generate the autocompletion script for powershell.'
+i18nReady: true
+---
+
+# kmdo pkg completion powershell
+
+Generate the autocompletion script for powershell
+
+## 概要
+
+Generate the autocompletion script for powershell.
+
+To load completions in your current shell session:
+
+	kmdo pkg completion powershell | Out-String | Invoke-Expression
+
+To load completions for every new session, add the output of the above command
+to your powershell profile.
+
+
+```
+kmdo pkg completion powershell [flags]
+```
+
+## 选项
+
+```
+  -h, --help              help for powershell
+      --no-descriptions   disable completion descriptions
+```
+
+## 从父命令继承的选项
+
+```
+      --verbose   Enable verbose mode
+```
+
+## 另请参阅
+
+* [kmdo completion](/zh-cn/ref/helper/completion/)	 - Generate the autocompletion script for the specified shell
+

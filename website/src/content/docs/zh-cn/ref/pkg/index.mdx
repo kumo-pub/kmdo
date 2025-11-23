@@ -1,0 +1,61 @@
+---
+title: CMD kmdo pkg
+sidebar:
+  label: kmdo pkg
+description: 'Release engineering, simplified.'
+i18nReady: true
+---
+
+# kmdo pkg
+
+Release engineering, simplified
+
+## 概要
+
+Release engineering, simplified.
+
+Kmdo is a release automation tool, built with love and care by @caarlos0 and many contributors.
+
+Complete documentation is available at https://kmdo pkg.com
+
+## Examples
+
+```
+
+# Initialize your project:
+kmdo pkg init
+
+# Verify your configuration:
+kmdo pkg check
+
+# Verify dependencies:
+kmdo pkg healthcheck
+
+# Build the binaries only:
+kmdo pkg build
+
+# Run a snapshot release:
+kmdo pkg release --snapshot
+
+# Run a complete release:
+kmdo pkg release
+		
+```
+
+## 选项
+
+```
+  -h, --help      help for kmdo pkg
+      --verbose   Enable verbose mode
+```
+
+## 另请参阅
+
+* [kmdo pkg build](/zh-cn/ref/pkg/pkg_build/)	 - Builds the current project
+* [kmdo pkg check](/zh-cn/ref/pkg/pkg_check/)	 - Checks if configuration is valid
+* [kmdo pkg healthcheck](/zh-cn/ref/pkg/pkg_healthcheck/)	 - Checks if needed tools are installed
+* [kmdo pkg init](/zh-cn/ref/pkg/pkg_init/)	 - Generates a .kmdopkg.yaml file
+* [kmdo pkg jsonschema](/zh-cn/ref/pkg/pkg_jsonschema/)	 - Outputs kmdo pkg's JSON schema
+* [kmdo pkg mcp](/zh-cn/ref/pkg/pkg_mcp/)	 - Start a MCP server that provides Kmdo tools
+* [kmdo pkg release](/zh-cn/ref/pkg/pkg_release/)	 - Releases the current project
+

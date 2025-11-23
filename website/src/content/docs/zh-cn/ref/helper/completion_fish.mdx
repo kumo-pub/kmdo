@@ -1,0 +1,48 @@
+---
+title: CMD kmdo completion fish
+sidebar:
+  label: kmdo completion-fish
+description: 'Generate the autocompletion script for fish.'
+i18nReady: true
+---
+
+# kmdo pkg completion fish
+
+Generate the autocompletion script for fish
+
+## 概要
+
+Generate the autocompletion script for the fish shell.
+
+To load completions in your current shell session:
+
+	kmdo pkg completion fish | source
+
+To load completions for every new session, execute once:
+```fish
+	kmdo pkg completion fish > ~/.config/fish/completions/kmdo pkg.fish
+```
+You will need to start a new shell for this setup to take effect.
+
+
+```
+kmdo pkg completion fish [flags]
+```
+
+## 选项
+
+```
+  -h, --help              help for fish
+      --no-descriptions   disable completion descriptions
+```
+
+## 从父命令继承的选项
+
+```
+      --verbose   Enable verbose mode
+```
+
+## 另请参阅
+
+* [kmdo completion](/zh-cn/ref/helper/completion/)	 - Generate the autocompletion script for the specified shell
+

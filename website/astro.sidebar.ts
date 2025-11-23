@@ -43,6 +43,28 @@ export const sidebar = [
 	group('reference', {
 		items: [
 			'kumo-ref',
+			group('reference.pkg', {
+				items: [
+					'ref/pkg', 
+					'ref/pkg/pkg_init',
+					'ref/pkg/pkg_build',
+					'ref/pkg/pkg_check',
+					'ref/pkg/pkg_healthcheck',
+					'ref/pkg/pkg_jsonschema',
+					'ref/pkg/pkg_mcp',
+					'ref/pkg/pkg_release',
+				]
+			}),
+				group('reference.helper', {
+				items: [
+					'ref/helper/completion',
+					'ref/helper/completion_bash',
+					'ref/helper/completion_zsh',
+					'ref/helper/completion_powershell',
+					'ref/helper/completion_fish',
+				]
+			}),
+
 		],
 	}),
 

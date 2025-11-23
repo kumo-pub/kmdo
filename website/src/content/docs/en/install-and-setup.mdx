@@ -9,9 +9,349 @@ import { Tabs, TabItem, FileTree, CardGrid, LinkCard, Steps } from '@astrojs/sta
 import PackageManagerTabs from '~/components/tabs/PackageManagerTabs.astro';
 import ReadMore from '~/components/ReadMore.astro';
 
-s the fastest way to start a new Astro project from scratch. It will walk you 
+kmdo is an automated release engineering tool developed in Go. It supports both `kminstaller` interactive 
+installation and local index installation methods.  
+It is compatible with Unix-like systems such as `Linux (amd64/arm64/arm-v7/i386)` and `macOS (amd64/arm64)`.
+ The installation process requires no compilation and completes in seconds.
 
-## Prerequisites
+## I. Method 1: KM Installer Interactive Installation (Recommended, zero-configuration start-up)
 
-- **Node.js** - `v18.20.8` or `v20.3.0`, `v22.0.0` or higher. (`v19` and `v21` are not supported.)
+Fully automated deployment is achieved through the official dedicated installation tool kminstaller, 
+which automatically adapts to the system architecture, selects the optimal version, and configures
+environment variables, making it suitable for most users to use quickly.
 
+### Pre-dependency checks
+
+kmdo installation only requires a Python 3.8+ environment (for running kminstaller). First, verify 
+your local Python version:
+
+```bash
+# Output example: Python 3.10.12 (version ≥ 3.8 is acceptable;
+
+# If not installed, you need to execute: sudo apt install python3-pip -y first)
+```
+
+
+### 2. Install the kminstaller tool
+
+```bash
+pip install kminstaller --user
+# Note: The --user parameter indicates user-level installation, which does not 
+# require root privileges and avoids polluting the system environment.
+```
+:::tip [Solving the "kminstaller: command not found" problem]
+
+If executing `kminstaller --help` results in a command not found error, it's because the Python 
+user-level binary directory is not loaded. Execute the following command:
+
+```bash source ~/.bashrc
+
+```
+Verification: If executing `kminstaller --help` displays help information, the configuration is successful.
+
+:::
+
+### 4. Start the kmdo interactive installation
+
+```bash
+  kminstaller install kmdo
+```
+
+### 5. Follow the guide to complete the installation (fully visual, no manual intervention required)
+
+#### Step 1: Automatically download the official version index
+
+The tool will automatically download the kmdo version index file from the official source, 
+which contains information on all available versions:
+```bash
+🔗 No local index provided, downloading official index...
+✅ Official index downloaded to temporary directory
+```
+
+#### Step 2: Select kmdo Version
+
+The terminal will list all available versions (including version number, release status, and release date). 
+Use the **arrow keys** to navigate up and down, and **press Enter** to confirm your selection.
+```bash
+📋 Select kmdo Version
+Choose a version for kmdo
+  v0.6.20 (released) - Published: 2025-11-21
+  v0.6.19 (released) - Published: 2025-11-20
+  v0.6.18 (beta) - Published: 2025-11-19
+> v0.6.17 (released) - Published: 2025-11-18
+# Note: "released" refers to the stable version, and "beta" refers to 
+# the test version. We recommend choosing the latest stable version.
+```
+
+#### Step 3: Automatic System Architecture Matching
+
+The tool will detect the current system's OS and architecture, and automatically 
+match the optimal binary installation package:
+```bash
+💻 Detected System: linux | Arch: amd64
+🎯 Matched asset (score: 3): kmdo-0.6.20-linux-x86_64.tar.gz
+# Supports architecture synonym adaptation: amd64 ↔ x86_64, arm64 ↔ aarch64, arm-v7 ↔ armv7l, 386 ↔ i386
+```
+
+#### Step 4: Automated Download, Decompression, and Deployment
+
+The tool will perform the following operations without manual intervention:
+
+1. Download the matching binary package to a temporary directory (e.g., /tmp/kmdo_install_xxx/)
+
+2. Decompress the .tar.gz package to a temporary extraction directory
+
+3. Copy the core program and configuration files to the default installation path
+
+4. Add executable permissions (0755) to the kmdo binary file
+
+5. Automatically execute `kmdo env init -f` to complete environment initialization
+
+#### Step 5: Installation Success Message
+
+After installation, the terminal will output the following information:
+```bash
+🎉 kmdo installation completed successfully!
+   Install directory: /home/jeff/.kmdo
+   Binary path: /home/jeff/.kmdo/kmdo
+   Environment variable has been added to ~/.bashrc
+💡 Tip: Run "source ~/.bashrc" to take effect immediately
+```
+## II. Method 2: Local Index Installation (Suitable for Offline/Internal Environments)
+
+If your environment cannot access the external network (offline environment), or you need 
+to use an internally customized version index, you can install via a local index file. The steps are as follows:
+
+### 1. Prepare the local version index file
+
+Obtain the kmdo_release_index.json (version index file) from official channels or the internal repository, and save
+it to any local directory. Example:
+
+:::note
+- Example save path: ~/downloads/kmdo_release_index.json
+
+- The index file contains information on all available versions (version number, release date, binary download link, etc.)
+:::
+
+### 2. Execute the local index installation command
+
+```bash
+kminstaller install kmdo --index ~/downloads/kmdo_release_index.json
+# Note: The --index parameter is followed by the absolute or relative path to the local index file.
+```
+
+### 3. Installation Complete
+
+- The tool will read the local index file and list all available versions.
+
+- Subsequent steps are the same as interactive installation (select version → automatic download/deployment → 
+  environment initialization)
+
+- Environment variables will be automatically written to `~/.bashrc`, no manual configuration is required.
+
+## III. Verifying the Installation
+
+After installation, you must execute the following command to verify successful deployment:
+
+### 1. Loading Environment Variables
+
+```bash
+source ~/.bashrc
+# Note: Environment variables have been automatically written to ~/.bashrc. Executing this command
+# will take effect immediately without restarting the terminal.
+```
+
+### 2. Verify kmdo version
+
+```bash
+kmdo --version
+# Example of successful output (consistent with the selected version):
+   _   _ _        _______      ____     
+  | | /   \      /   __  \    / __ \    
+  | |/ /|  \    /   |   \ \  / /  \ \   
+  |   / |   \  / /| |    | DO (    ) )  
+  | |\ \| |\ \/ / | |__ / /  \_\__/ /   
+  |_| \_|_| \__/  |_____/     \____/    
+                                        
+kmdo: Release engineering, simplified.
+https://docs.kumose.cc/kmdo
+
+GitVersion:    0.6.20
+GitCommit:     332bab9f94309c71e61703d480d72bf63e9832e6
+GitTreeState:  false
+BuildDate:     2025-11-21T01:09:18Z
+BuiltBy:       kumose
+GoVersion:     go1.25.4
+Compiler:      gc
+ModuleSum:     h1:h10Rr8SAkpgb77dVeb7tUHbRXbgbtz+QaJBWDNfwbpk=
+Platform:      linux/amd64
+```
+### 3. Verify command-line functionality
+
+```bash
+kmdo --help
+# Successful output: Help information for all kmdo commands (indicating the command line is functioning correctly)
+```
+
+:::note [Common Validation Issues]
+
+- Issue 1: Error message: `kmdo: command not found`
+
+Solution: Re-execute `source ~/.bashrc` to ensure environment variables are loaded successfully.
+
+- Issue 2: Version number does not match the selected version.
+
+Solution: Uninstall and reinstall (refer to "Uninstallation Methods"), selecting the correct version.
+
+- Issue 3: Error executing `kmdo` command: `permission denied`
+
+Solution: Manually add executable permissions: `chmod +x ~/.kmdo/bin/kmdo`
+:::
+
+## IV. Installation Details
+
+### 1. Default Installation Path (User-level Deployment, No Root Dependency)
+
+- Core Program: `~/.kmdo/bin/kmdo` (Main executable file)
+
+- Configuration Directory: `~/.kmdo/config/` (Stores default configuration and baseline data)
+
+- Cache Directory: `~/.kmdo/cache/` (Stores dependency cache and temporary files)
+
+- Installation Log: `~/.kmdo/installer.log` (Records installation process details for troubleshooting)
+
+### 2. Environment Variable Configuration Instructions
+
+
+`kminstaller` will automatically add the following configuration to `~/.bashrc`:
+
+```bash
+# kmdo environment variable configuration (auto-generated, do not modify manually)
+export KMDO_HOME="/home/jeff/.kmdo"
+# Source env file only if it exists (avoid startup errors)
+[ -f "$KMDO_HOME/kmdo.env" ] && source "$KMDO_HOME/kmdo.env"
+```
+
+Function: Adds the `kmdo` installation directory to the system's `KMDO_HOME` for global access.
+
+If using the `Zsh` terminal, you need to manually add the above configuration to `~/.zshrc` and then execute 
+`source ~/.zshrc`.
+
+`$KMDO_HOME/kmdo.env` exports variables managed by `kmdo` and command auto-completion.
+
+`$KMDO_HOME/kmdo.env` automatically loads command prompts based on the different `shells`. The command prompt 
+file is located in `$KMDO_HOME/completions`.
+
+### 3. Supported Systems and Architectures
+
+- Operating Systems: Linux(Ubuntu/Debian/CentOS, etc.), macOS(10.15+)
+
+- Architecture Support: amd64(x86_64), arm64(aarch64), arm-v7(armv7l), i386(386)
+
+## V. Uninstallation Methods
+
+kmdo uses isolated deployment; simply deleting the installation directory will completely uninstall it, 
+leaving no system remnants:
+
+### 1. Basic Uninstallation (Delete Core Files)
+
+```bash
+rm -rf ~/.kmdo
+```
+
+Note: This command will delete all kmdo-related files (programs, configurations, caches, logs).
+
+### 2. Clean Environment Variables (Optional)
+Edit the `~/.bashrc` file and remove the automatically added PATH configuration line:
+
+```bash
+# 1. Open the .bashrc file
+nano ~/.bashrc
+# 2. Find and delete the following lines
+
+
+# kmdo environment variable configuration (auto-generated, do not modify manually)
+export KMDO_HOME="/home/jeff/.kmdo"
+# Source env file only if it exists (avoid startup errors)
+[ -f "$KMDO_HOME/kmdo.env" ] && source "$KMDO_HOME/kmdo.env"
+
+# 3. Save and exit: Ctrl+O → Enter → Ctrl+X
+# 4. Apply the configuration: source ~/.bashrc
+```
+
+### 3. 验证卸载
+
+```bash
+kmdo --version
+The message "kmdo: command not found" indicates successful uninstallation.
+```
+
+## VI. Troubleshooting Common Issues
+
+### 1. Download Timeout/Failure
+
+- Symptom: During installation, the message "Download failed (Request error): HTTPSConnectionPool read timed out" appears.
+- Cause: Unstable network connection or restricted GitHub access.
+- Solution:
+  1. Check network connection and retry the installation command.
+  2. Configure a proxy: `export HTTPS_PROXY=https://proxy_address:port`, then execute the installation.
+  3. Switch to Method 2 (local index installation), manually download the binary package, and then deploy.
+
+### 2. Decompression Failure
+
+- Symptom: "Extraction failed: tarfile.ReadError: invalid header"
+- Cause: Incomplete or corrupted binary package download
+- Solution:
+  1. Re-execute the installation command; the tool will automatically re-download.
+  2. Manually download the corresponding version of the binary package and install using method 2 (--local parameter).
+
+### 3. Initialization Failure
+
+- Symptom: The message "kmdo init -f failed: ..." appears.
+- Cause: Permission issues or configuration conflicts occurred during environment initialization.
+- Solution:
+  1. Manually execute the initialization command: `kmdo env init -f`
+  2. Check the error log: `cat ~/.kmdo/installer.log` to locate the specific problem.
+
+### 4. Version Index Loading Failed
+
+- Symptom: "Local index file not found" or "Invalid index file format" message displayed.
+- Cause: Incorrect local index file path or corrupted file.
+- Solution:
+  1. Check if the index file path is correct (absolute path takes precedence).
+  2. Re-download the index file, ensuring the file format is valid JSON.
+
+## VII. Advanced Use (Optional)
+
+### 1. Custom Installation Path
+
+To install kmdo to a custom directory (e.g., /opt/kmdo), you need to modify the kminstaller configuration 
+(suitable for advanced users):
+
+```text
+# 1. Locate the kminstaller installation directory (execute `pip show kminstaller | grep Location`)
+# 2. Edit the `kminstaller/component/kmdo/installer.py` file
+# 3. Modify the default value of `install_dir`: `install_dir = "/opt/kmdo"` (root privileges required)
+# 4. Execute the installation command: `sudo kminstaller install kmdo`
+```
+
+### 2. Offline Installation (No Network Environment)
+
+1. Download from an external network environment:
+
+- kminstaller installation package: `pip download kminstaller --no-deps -d ~/downloads/`
+- kmdo version index file: `kmdo_release_index.json`
+- Target version binary package: `kmdo-version-sys-arch.tar.gz` (Choose the architecture supported by your system based on sys and arch)
+
+2. Copy to the offline environment and execute:
+```bash
+
+# Install kminstaller
+
+pip install ~/downloads/kminstaller-xxx.whl --user
+
+# Install kmdo (specify local package)
+
+kminstaller install kmdo --index ~/downloads/kmdo_release_index.json --local ~/downloads/kmdo-xxx.tar.gz
+
+```

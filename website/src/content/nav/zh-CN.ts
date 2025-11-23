@@ -21,6 +21,8 @@ export default navDictionary({
 	'reference.other': '其他开发 API',
 	'reference.syntax': 'Kumo 模板语法',
 	'reference.experimental': '实验性功能',
+	'reference.pkg': 'pkg命令',
+	'reference.helper': '帮助命令',
 
 	integrations: '集成',
 	'integrations.ui': 'UI 框架',

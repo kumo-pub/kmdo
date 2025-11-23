@@ -16,6 +16,7 @@ const categories = [
 	['recipes/', 'Recipes'],
 	['reference/errors/', 'Error Reference'],
 	['reference/', 'Reference'],
+	['reference/pkg', 'Pkg'],
 	['tutorial/', 'Tutorials'],
 	['tutorials/', 'Tutorials'],
 ] as const;

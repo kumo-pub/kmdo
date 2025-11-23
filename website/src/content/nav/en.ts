@@ -19,6 +19,8 @@ export default {
 	'reference.other': 'Other development APIs',
 	'reference.syntax': 'Kumo Template Syntax',
 	'reference.experimental': 'Experimental features',
+	'reference.pkg': 'cmd pkg',
+	'reference.helper': 'cmd helper',
 
 	integrations: 'Integrations',
 	'integrations.ui': 'UI frameworks',
