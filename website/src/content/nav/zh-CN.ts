@@ -5,22 +5,15 @@ export default navDictionary({
 	'start.welcome': '欢迎，世界！',
 	'start.newProject': '开始新项目',
 	'start.config': '配置',
-	'start.migrate': '迁移到 Kumo',
 
 	guides: '指南',
-	'guides.routing': '路由导航',
-	'guides.ui': '构建你的 UI',
-	'guides.content': '向你的网站添加内容',
-	'guides.serverRendering': '服务端渲染',
-	'guides.upgrade': '升级',
-	'guides.upgrade.major': '主版本升级指南',
-	'guides.recipes': '操作方案',
+	'guides.pkg': "发布应用 ",
+	'guides.pkg.archives': "压缩包和系统包",
+	'guides.pkg.sign':"包签名",
+	'guides.pkg.publish':"发布包",
+	'guides.pkg.builds':"构建包",
 
 	reference: '参考',
-	'reference.runtime': '运行时 API',
-	'reference.other': '其他开发 API',
-	'reference.syntax': 'Kumo 模板语法',
-	'reference.experimental': '实验性功能',
 	'reference.pkg': 'pkg命令',
 	'reference.helper': '帮助命令',
 
@@ -34,4 +27,6 @@ export default navDictionary({
 	'thirdParty.cms': '内容管理系统',
 	'thirdParty.backend': '后端服务',
 	'thirdParty.media': '图像和视频托管',
+
+	shooting: '故障与排查',
 });

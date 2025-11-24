@@ -1,0 +1,112 @@
+---
+title: Poetry
+sidebar:
+  label: Poetry
+description: 'Poetry building.'
+i18nReady: true
+---
+
+
+现在你可以通过 `poetry build` 结合 Kmdo 构建 Python 的 `wheel` 包和 `sdist` 源码包！
+
+只需将 `builder` 设置为 `poetry`，并指定所需的 `buildmode` 即可：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - builder: poetry
+    buildmode: wheel
+```
+
+生成的 `.whl` 文件和 `.tar.gz` 文件可用于签名、校验和计算、Docker 镜像内部使用等多种场景。
+
+## 配置
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  builds:
+  # 可通过 YAML 列表定义多个构建配置
+  - #
+    # 构建的唯一标识 ID
+    #
+    # 默认值：项目目录名称
+    id: "my-build"
+
+    # 使用 poetry 作为构建工具
+    builder: poetry
+
+    # 包含代码的项目（子）目录路径
+    # 此目录将作为 poetry build 命令的工作目录
+    #
+    # 默认值："."（当前目录）
+    dir: my-app
+
+    # 构建模式
+    #
+    # 有效值："wheel"（二进制包）、"sdist"（源码包）
+    # 默认值："wheel"
+    buildmode: sdist
+
+    # 指定构建时使用的 poetry 可执行文件路径
+    # 大多数场景下可忽略此配置
+    #
+    # 默认值："poetry"（系统环境变量中配置的 poetry）
+    # 支持：模板语法
+    tool: poetry
+
+    # 设置要执行的构建命令
+    # 例如：若需构建测试相关产物，可将其设为 "test"
+    # 大多数场景下可忽略此配置
+    #
+    # 默认值：build（即执行 poetry build）
+    command: build
+
+    # 自定义构建参数
+    #
+    # 支持：模板语法
+    flags:
+      - --no-cache
+
+    # 构建过程中需设置的自定义环境变量
+    # 无效的环境变量将被忽略
+    #
+    # 默认值：系统环境变量 + 全局 env 配置段
+    # 支持：模板语法
+    env:
+      - FOO=bar
+
+    # 钩子可用于自定义最终产物（如执行生成器等）
+    #
+    # 支持：模板语法
+    hooks:
+      pre: ./foo.sh  # 构建前执行的脚本
+      post: ./script.sh {{ .Path }}  # 构建后执行的脚本（传入二进制产物绝对路径）
+```
+
+:::tip
+目前仅支持 `py3-none-any` 这一目标平台。
+:::
+
+## 同时构建 wheel 包和 sdist 源码包
+
+需声明两个构建配置，分别对应两种构建模式：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - id: wheel
+    builder: poetry
+    buildmode: wheel
+  - id: sdist
+    builder: poetry
+    buildmode: sdist
+```
+
+## 发布至 PyPi
+
+可通过 [全局后置钩子](/en/guides/pkg/general) 实现发布：
+
+```yaml title=".kmdopkg.yaml"
+# global after hooks
+after:
+  - cmd: "poetry publish"
+    if: "{{ .IsRelease }}"
+```

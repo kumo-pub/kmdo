@@ -1,0 +1,160 @@
+---
+title: 发布
+sidebar:
+  label: 发布
+description: '发布 configuration.'
+i18nReady: true
+---
+
+
+kmdo 可基于当前标签创建 GitHub/GitLab/Gitea 发布版本，上传所有产物，并根据上一个标签以来的新提交生成更新日志（changelog）。
+
+## GitHub 配置
+
+以下是 `release` 章节中支持的 GitHub 自定义配置项：
+
+```yaml title=".kmdopkg.yaml"
+release:
+  # 要创建发布版本的仓库信息
+  # 默认值：从 origin 远程仓库 URL 提取；私有部署仓库需手动指定
+  github:
+    owner: user
+    name: repo
+
+  # 要上传的归档产物 ID 列表
+  # 留空表示上传所有 ID
+  #
+  # 默认值：[]
+  ids:
+    - foo
+    - bar
+
+  # 若设为 true，将不会自动发布版本（保持草稿状态）
+  # 注意：所有 GitHub 发布版本在上传产物时默认以草稿形式创建
+  # 仅支持 GitHub 和 Gitea
+  draft: true
+
+  # 创建新草稿版本前，是否删除同名的现有草稿版本
+  #
+  # 仅当 `draft` 设为 true 时生效
+  # 仅支持 GitHub
+  replace_existing_draft: true
+
+  # 是否使用现有的草稿版本作为目标发布版本
+  #
+  # 仅支持 GitHub
+  # <!-- md:inline_version v2.5 -->（v2.5 及以上版本支持）
+  use_existing_draft: true
+
+  # 若产物已存在，是否删除现有产物后重新上传
+  #
+  # 仅支持 GitHub
+  # 此操作可能消耗较多 API 调用次数（受速率限制影响），仅在上传产物返回 422 错误（产物已存在）时触发
+  # 触发后会获取该发布版本的所有产物列表，删除与当前上传文件同名的产物，然后重试上传
+  replace_existing_artifacts: true
+
+  # 延迟向远程仓库推送标签时使用
+  # 可在本地创建标签但不推送，执行 kmdo 时会将 GitHub 发布版本的 `target_commitish` 设为该字段值
+  # 仅支持 GitHub
+  #
+  # 默认值：''
+  # 支持模板语法
+  target_commitish: "{{ .Commit }}"
+
+  # 自定义 GitHub 发布版本的标签名称
+  # 通常与 `target_commitish` 配合使用，或在单体仓库向公共仓库发布二进制产物时（去除标签前缀）使用
+  #
+  # 注意：修改此值后，需同步更新后续发布器（publishers）和通知器（announcers）中的 `url_template`
+  #
+  # 此功能仅在 kmdo Pro 中可用
+  # 默认值：'{{ .PrefixedCurrentTag }}'
+  # 支持模板语法
+  tag: "{{ .CurrentTag }}"
+
+  # 若设置此值，将在指定分类下创建发布版本讨论
+  #
+  # 默认值：''
+  discussion_category_name: General
+
+  # 标记发布版本是否为预发布版本
+  # 设为 auto 时，若标签包含预发布标识（如 v1.0.0-rc1），自动标记为预发布
+  # 设为 true 时，强制标记为预发布
+  # 默认值：false
+  prerelease: auto
+
+  # 若设为 false，将不会把该版本标记为 "最新版本"
+  # 不会显示在发布版本列表顶部，也不会通过 https://api.github.com/repos/OWNER/REPO/releases/latest 接口返回
+  #
+  # 仅支持 GitHub
+  #
+  # 默认值：true
+  # 支持模板语法（v2.6 及以上版本）
+  make_latest: true
+
+  # 若发布版本已存在，对现有发布说明的处理方式
+  #
+  # 有效值：
+  # - `keep-existing`: 保留现有说明
+  # - `append`: 将当前说明追加到现有说明后
+  # - `prepend`: 将当前说明添加到现有说明前
+  # - `replace`: 替换现有说明
+  #
+  # 默认值：`keep-existing`
+  mode: append
+
+  # 发布说明的头部内容
+  #
+  # 支持模板语法
+  header: |
+    ## Some title ({{ .Date }})
+
+    Welcome to this new release!
+
+  # 发布说明的尾部内容
+  #
+  # 支持模板语法
+  footer: |
+    ## Thanks
+
+    Those were the changes on {{ .Tag }}!
+
+  # 自定义发布版本的名称
+  #
+  # 默认值：'{{.Tag}}'（kmdo Pro 中为 '{{.PrefixedTag}}'）
+  # 支持模板语法
+  name_template: "{{.ProjectName}}-v{{.Version}} {{.Env.USER}}"
+
+  # 禁用此配置项后，将不在任何源码管理平台（SCM）创建发布版本
+  # 注意：这可能导致依赖发布版本 URL 的功能（如 Homebrew 仓库）失效
+  #
+  # 支持模板语法
+  disable: true
+
+  # 若设为 true，仅禁用向 SCM 上传产物的功能
+  # kmdo 仍会创建包含更新日志的发布版本，但不会上传任何产物
+  #
+  # 支持模板语法
+  skip_upload: true
+
+  # 向发布版本添加额外的预存文件
+  # 发布后的文件名取路径的最后一部分（基准名）
+  # 若存在同名文件，将使用最后找到的那个
+  #
+  # 支持模板语法
+  extra_files:
+    - glob: ./path/to/file.txt
+    - glob: ./glob/**/to/**/file/**/*
+    - glob: ./glob/foo/to/bar/file/foobar/override_from_previous
+    - glob: ./single_file.txt
+      name_template: file.txt # 注意：仅当 glob 匹配单个文件时生效
+
+  # 同时向发布版本上传 metadata.json 和 artifacts.json 文件
+  include_meta: true
+
+```
+
+:::tip
+
+[了解如何配置 API 令牌、GitHub Enterprise 等](/zh-cn/guides/pkg/publish/scm/)。
+
+:::

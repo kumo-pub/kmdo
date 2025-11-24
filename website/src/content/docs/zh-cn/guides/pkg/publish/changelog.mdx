@@ -1,0 +1,114 @@
+---
+title: Changelog
+sidebar:
+  label: Changelog
+description: 'Changelog configuration.'
+i18nReady: true
+---
+
+
+可通过配置文件中的 `changelog` 章节自定义更新日志的生成方式：
+
+```yaml title=".kmdopkg.yaml"
+changelog:
+  # 设为 true 可完全禁用更新日志生成
+  #
+  # 警告：此配置会忽略通过 `--release-notes` 传入的任何更新日志文件，
+  # 最终生成空更新日志
+  #
+  # 可能导致 GitHub/GitLab/Gitea 上的发布说明为空
+  #
+  # 支持模板语法
+  disable: "{{ .Env.CREATE_CHANGELOG }}"
+
+  # 选择更新日志生成实现方式
+  #
+  # 有效值：
+  # - `git`：使用 `git log` 生成；
+  # - `github`：调用 GitHub Compare API，更新日志中附加作者用户名；
+  # - `gitlab`：调用 GitLab Compare API，更新日志中附加作者姓名和邮箱（需个人访问令牌）；
+  # - `gitea`：调用 Gitea Compare API，更新日志中附加作者用户名；
+  # - `github-native`：调用 GitHub 发布说明生成 API，禁用分组、排序及其他格式化功能。
+  #
+  # 默认值：'git'
+  use: github
+
+  # 提交信息的格式化模板
+  #
+  # 支持模板语法
+  #
+  # 默认值：
+  #    若使用 'git'：'{{ .SHA }} {{ .Message }}'
+  #    其他方式：'{{ .SHA }}: {{ .Message }} ({{ with .AuthorUsername }}@{{ . }}{{ else }}{{ .AuthorName }} <{{ .AuthorEmail }}>{{ end }})'
+  #
+  # 额外模板字段：
+  # - `SHA`：提交的 SHA1 哈希值
+  # - `Message`：提交信息的第一行（即提交主题）
+  # - `AuthorName`：作者全名（使用 'git' 时支持 mailmap 配置）
+  # - `AuthorEmail`：作者邮箱（使用 'git' 时支持 mailmap 配置）
+  # - `AuthorUsername`：GitHub/GitLab/Gitea 用户名 - 'git' 方式不支持
+  #
+  # 'git' 方式使用说明：<!-- md:inline_version v2.8 -->（v2.8 及以上版本支持）
+  format: "{{.SHA}}: {{.Message}} (@{{.AuthorUsername}})"
+
+  # 按提交信息排序更新日志
+  # 可选值：asc（升序）、desc（降序）或留空
+  # 留空表示不排序，沿用 `git log` 的输出顺序
+  #
+  # 使用 'github-native' 时此配置无效
+  sort: asc
+
+  # 更新日志中提交哈希的最大长度
+  #
+  # 0：使用生成器默认的哈希长度
+  # -1：从更新日志中移除提交哈希
+  # 其他数值：指定哈希的最大长度
+  #
+  # 使用 'github-native' 时此配置无效
+  abbrev: -1
+
+  # 借助 AI 生成发布说明
+  # 详见下方说明
+  ai:
+    use: anthropic  # 使用的 AI 提供商（此处为 Anthropic）
+    prompt: "The prompt..."  # AI 生成提示词
+
+  # 按正则表达式对提交信息分组，并指定分组标题
+  # order 值定义分组在更新日志中的显示顺序
+  # 未指定 regexp 时，所有提交将归入默认分组
+  #
+  # 匹配规则：仅对提交信息的第一行进行匹配，
+  # 匹配内容格式通常为 `<缩写提交哈希>[:] <提交标题>`
+  # 正则语法遵循 RE2 标准：https://github.com/google/re2/wiki/Syntax
+  #
+  # 使用 'github-native' 时此配置无效
+  groups:
+    - title: Features  # 分组标题：新功能
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'  # 匹配 feat 类型提交（支持范围标注和破坏性变更）
+      order: 0  # 显示顺序（数值越小越靠前）
+    - title: "Bug fixes"  # 分组标题：问题修复
+      regexp: '^.*?bug(\([[:word:]]+\))??!?:.+$'  # 匹配 bug 类型提交（支持范围标注和破坏性变更）
+      order: 1
+    - title: Others  # 分组标题：其他变更
+      order: 999  # 最后显示
+
+  # 进一步过滤更新日志条目
+  #
+  # 使用 'github-native' 时此配置无效
+  filters:
+    # 匹配以下正则的提交信息将从更新日志中排除
+    #
+    # 仅对提交信息的第一行进行匹配
+    exclude:
+      - "^docs:"  # 排除文档更新提交
+      - typo      # 排除拼写错误修复提交
+      - (?i)foo   # 不区分大小写匹配包含 "foo" 的提交
+
+    # 仅将匹配以下正则的提交信息加入更新日志
+    #
+    # 若 include 非空，则 exclude 配置会被忽略
+    #
+    # 仅对提交信息的第一行进行匹配
+    include:
+      - "^feat:"  # 仅保留 feat 类型提交
+```

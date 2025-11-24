@@ -1,0 +1,217 @@
+---
+title: 使用 Ko 构建 Docker 镜像
+sidebar:
+  label: 使用 Ko 构建 Docker 镜像
+description: '使用 Ko 构建 Docker 镜像 Releases.'
+i18nReady: true
+---
+
+
+您也可以使用 [ko][] 构建和发布 Docker 容器镜像。
+
+请注意，ko 会重新构建您的二进制文件。
+但这不会显著增加发布时间——因为在可能的情况下，
+ko 会使用与 [build](/zh-cn/guides/pkg/builds/go/) 流程相同的构建选项，因此构建结果大概率会被缓存。
+:::tip
+
+    当处于 `--snapshot` 模式时，Ko 会将镜像发布到 `ko.local`（本地镜像仓库）。
+    若为常规构建（非快照模式），Ko 仅在发布阶段执行。
+:::
+
+:::note
+    要使 Ko 正常工作，您仍需登录容器仓库——可通过 `docker login` 命令或其他方式完成认证。
+:::
+
+```yaml title=".kmdopkg.yaml"
+kos:
+  kos:
+  - # 镜像的唯一标识 ID（用于区分多个 Ko 镜像配置）
+    id: foo
+
+    # 用于导入构建配置的构建 ID（关联 kmdo 中 `builds` 段的配置）
+    build: build-id
+
+    # 要构建的主程序路径（Go 应用入口路径）
+    # 必须是相对路径
+    #
+    # 默认值：继承 build 配置中的 main 字段（build.main）
+    main: ./cmd/...  # 示例：构建 cmd 目录下所有子包的应用
+
+    # 构建时使用的工作目录
+    #
+    # 默认值：继承 build 配置中的 dir 字段（build.dir）
+    working_dir: .  # 示例：当前项目根目录
+
+    # 镜像使用的基础镜像（底层依赖镜像）
+    #
+    # 默认值：'cgr.dev/chainguard/static'（Chainguard 轻量静态基础镜像）
+    base_image: alpine  # 示例：使用 Alpine 基础镜像
+
+    # 镜像的标签（Docker 镜像 Labels，用于元数据描述）
+    labels:
+      foo: bar  # 示例：自定义键值对标签
+
+    # OCI 清单的注解（用于镜像清单的元数据补充）
+    annotations:
+      foo: bar  # 示例：自定义 OCI 清单注解
+
+    # 镜像运行时的默认用户（UID:GID 格式）
+    # 用于限制容器内进程权限，遵循最小权限原则
+    user: "1234:1234"
+
+    # 镜像要推送的仓库列表
+    #
+    # 逻辑：第一个仓库用于 Ko 构建并推送，后续仓库通过 crane 工具从第一个仓库复制镜像
+    #
+    # 默认值：[ '$KO_DOCKER_REPO' ]（优先使用环境变量 KO_DOCKER_REPO 指定的仓库）
+    repositories:
+      - ghcr.io/foo/bar  # 示例：GitHub 容器仓库
+      - foo/bar           # 示例：Docker Hub 仓库
+
+    # 镜像要推送的仓库（单仓库配置）
+    #
+    # 默认值：'$KO_DOCKER_REPO'（环境变量指定的仓库）
+    # 已废弃：建议使用上方的 'repositories' 字段（支持多仓库）
+    repository: ghcr.io/foo/bar
+
+    # 要构建和发布的目标平台列表（CPU 架构+系统）
+    #
+    # 默认值：'linux/amd64'（仅 64 位 Linux 平台）
+    platforms:
+      - linux/amd64  # 64 位 Linux（x86_64 架构）
+      - linux/arm64  # 64 位 Linux（ARM 架构）
+
+    # 镜像要构建和推送的标签列表
+    # 空标签会被忽略
+    #
+    # 默认值：'latest'
+    # 支持模板语法
+    tags:
+      - latest                # 标准 latest 标签
+      - "{{.Tag}}"            # 引用 kmdo 版本标签（如 v1.0.0）
+      - "{{if not .Prerelease}}stable{{end}}"  # 非预发布版本添加 stable 标签
+
+    # 镜像的创建时间（Unix 时间戳，单位：秒，格式为字符串）
+    #
+    # 支持模板语法
+    creation_time: "{{.CommitTimestamp}}"  # 示例：使用代码提交时间作为镜像创建时间
+
+    # kodata 目录中文件的创建时间（Unix 时间戳，单位：秒，格式为字符串）
+    # kodata：Ko 用于存储应用依赖资源的目录
+    #
+    # 支持模板语法
+    ko_data_creation_time: "{{.CommitTimestamp}}"  # 示例：与镜像创建时间一致
+
+    # 生成的 SBOM（软件物料清单）格式
+    # SBOM 用于记录镜像依赖的软件组件信息，保障供应链安全
+    #
+    # 默认值：'spdx'（SPDX 格式，行业通用标准）
+    # 有效值：spdx（生成 SPDX 格式 SBOM）、none（不生成 SBOM）
+    sbom: none  # 示例：不生成 SBOM
+
+    # SBOM 文件的输出目录路径
+    #
+    # 默认值：未设置（仅将 SBOM 上传到 OCI 仓库，不写入本地文件系统）
+    sbom_directory: "out/sbom"  # 示例：将 SBOM 写入本地 out/sbom 目录
+
+    # 当 kmdo 执行 --snapshot 标志时，Ko 会将镜像发布到本地 Docker 守护进程
+    # 通过 local_domain 配置本地镜像仓库域名（例如 kind.local 适配 Kind 集群）
+    #
+    # 默认值："kmdopkg.ko.local"（使用本地 Docker 仓库）
+    local_domain: "kmdo.ko.local"
+
+    # 构建时传递给 Go 编译器的 ldflags（链接器参数）
+    # 常用于注入版本号、编译时间等元信息
+    #
+    # 默认值：继承 build 配置中的 ldflags 字段（build.ldflags）
+    ldflags:
+      - foo
+      - bar  # 示例：自定义链接器参数
+
+    # 构建时传递给 Go 编译器的 flags（编译参数）
+    #
+    # 默认值：继承 build 配置中的 flags 字段（build.flags）
+    flags:
+      - foo
+      - bar  # 示例：自定义编译参数
+
+    # 构建时使用的环境变量
+    #
+    # 默认值：继承 build 配置中的 env 字段（build.env）
+    env:
+      - FOO=bar
+      - SOMETHING=value  # 示例：自定义构建环境变量
+
+    # 是否禁用当前这个 Ko 镜像配置
+    #
+    # 支持模板语法
+    # <!-- md:inline_version v2.8 -->（适配 kmdo v2.8+ 版本）
+    disable: "{{ .IsSnapshot }}"  # 示例：快照构建时禁用当前配置
+
+    # Bare 模式：镜像标签仅使用 $KO_DOCKER_REPO 配置，不附加额外路径（如 Go 模块路径）
+    # 启用后镜像标签格式：<仓库>/<标签>（而非 <仓库>/<模块路径>/<标签>）
+    bare: true
+
+    # 是否在仓库名称后保留完整的 Go 导入路径
+    # 启用后镜像标签格式：<仓库>/<完整导入路径>/<标签>
+    preserve_import_paths: true
+
+    # 是否在仓库名称后仅使用基础路径（不含 MD5 哈希值）
+    # 禁用后 Ko 不会为路径添加 MD5 哈希后缀，使镜像标签更简洁
+    base_import_paths: true
+```
+
+更多信息请参阅 [ko 的项目主页][ko]。
+
+:::tip
+
+    注意：kmdo 的 `build` 配置段会为每个待构建目标解析环境变量，但 Ko 不会这么做。
+    这意味着 `.Os`、`.Arch` 这类与目标平台相关的变量，在 Ko 配置中是不可用的。
+:::
+
+### 示例
+
+以下是一个最简配置示例：
+
+```yaml title=".kmdopkg.yaml"
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env: ["CGO_ENABLED=1"]
+    binary: test
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+kos:
+  - repositories: [ghcr.io/caarlos0/test-ko]
+    tags:
+      - "{{.Version}}"
+      - latest
+    bare: true
+    preserve_import_paths: false
+    platforms:
+      - linux/amd64
+      - linux/arm64
+```
+
+此配置会构建适用于 `linux/arm64`、`linux/amd64`、`darwin/amd64` 和 `darwin/arm64` 平台的二进制文件，同时还会生成 
+`Linux` 平台对应的 `Docker` 镜像及镜像清单（manifest）。
+
+## 签名 KO 清单（Signing KO Manifests）
+
+KO 会将构建生成的清单（manifest）添加到制品列表中，因此你可以通过以下方式为其签名：
+
+`docker_signs`:
+
+```yaml title=".kmdopkg.yaml"
+docker_signs:
+  - artifacts: manifests
+```
+
+[ko]: https://ko.build

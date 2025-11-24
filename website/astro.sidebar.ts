@@ -17,7 +17,8 @@ export const sidebar = [
 			group('start.welcome', {
 				items: [
 					'start/why-kmdo',
-					'start/islands'
+					'start/islands',
+					'basic/components'
 				],
 			}),
 			group('start.newProject', {
@@ -36,6 +37,64 @@ export const sidebar = [
 		items: [
 			'troubleshooting',
 			'contribute',
+			group('guides.pkg', {
+				items: [
+					'guides/pkg',
+					'guides/pkg/general',
+					'guides/pkg/sboms',
+					group('guides.pkg.archives', {
+						items: [
+							'guides/pkg/archives/archives',
+							'guides/pkg/archives/source',
+							'guides/pkg/archives/linux',
+							'guides/pkg/archives/makeself',
+							'guides/pkg/archives/checksums',
+							'guides/pkg/archives/snapcraft',
+							'guides/pkg/archives/chocolatey',
+							'guides/pkg/archives/docker',
+							'guides/pkg/archives/docker_digests',
+							'guides/pkg/archives/ko',
+						]
+					}),
+					group('guides.pkg.builds', {
+						items: [
+							'guides/pkg/builds',
+							'guides/pkg/builds/hooks',
+							'guides/pkg/builds/cpp',
+							'guides/pkg/builds/go',
+							'guides/pkg/builds/python',
+							'guides/pkg/builds/poetry',
+							'guides/pkg/builds/uv',
+							'guides/pkg/builds/rust',
+						]
+					}),
+					group('guides.pkg.sign', {
+						items: [
+							'guides/pkg/sign/binary_sign',
+							'guides/pkg/sign/docker_sign',
+							'guides/pkg/sign/sign',
+						]
+					}),
+					group('guides.pkg.publish', {
+						items: [
+							'guides/pkg/publish/release',
+							'guides/pkg/publish/snapshots',
+							'guides/pkg/publish/blobs',
+							'guides/pkg/publish/nix',
+							'guides/pkg/publish/aur',
+							'guides/pkg/publish/aurs',
+							'guides/pkg/publish/krew',
+							'guides/pkg/publish/changelog',
+							'guides/pkg/publish/http',
+							'guides/pkg/publish/artifactory',
+							'guides/pkg/publish/publishers',
+							'guides/pkg/publish/attestations',
+							'guides/pkg/publish/milestones',
+							'guides/pkg/publish/scm',
+						]
+					}),
+				]
+			}),
 		],
 	}),
 
@@ -45,7 +104,7 @@ export const sidebar = [
 			'kumo-ref',
 			group('reference.pkg', {
 				items: [
-					'ref/pkg', 
+					'ref/pkg',
 					'ref/pkg/pkg_init',
 					'ref/pkg/pkg_build',
 					'ref/pkg/pkg_check',
@@ -55,7 +114,7 @@ export const sidebar = [
 					'ref/pkg/pkg_release',
 				]
 			}),
-				group('reference.helper', {
+			group('reference.helper', {
 				items: [
 					'ref/helper/completion',
 					'ref/helper/completion_bash',
@@ -72,6 +131,13 @@ export const sidebar = [
 	group('integrations', {
 		items: [
 			'integrations-guide',
+		],
+	}),
+	
+	// Integrations tab
+	group('shooting', {
+		items: [
+			'shooting/dirty',
 		],
 	}),
 ] satisfies StarlightUserConfig['sidebar'];

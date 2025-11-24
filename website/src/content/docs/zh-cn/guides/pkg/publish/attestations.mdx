@@ -1,0 +1,58 @@
+---
+title: Attestations 仓库
+sidebar:
+  label: Attestations 仓库
+description: 'Attestations configuration.'
+i18nReady: true
+---
+
+若使用 GitHub Actions 并需为构建产物生成证明（attest），可在发布工作流中添加以下配置：
+
+```yaml title=".github/workflows/release.yml"
+# ...
+permissions:
+  # ...
+  # 授予工作流写入证明（attestations）的权限
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    # ...
+    steps:
+      # ...
+      - uses: kumose/kmdo-action@v6
+        with:
+          # ...
+      # kmdo 执行完成后，为 ./dist/checksums.txt 中的所有文件生成构建来源证明
+      - uses: actions/attest-build-provenance@v3
+        with:
+          subject-checksums: ./dist/checksums.txt
+      # kmdo 执行完成后，为 ./dist/digests.txt 中的所有镜像生成构建来源证明
+      - uses: actions/attest-build-provenance@v3
+        if: startsWith(github.ref, 'refs/tags/v') # 快照版本（非标签版本）不推送 Docker 镜像，故仅标签版本执行此步骤
+        with:
+          subject-checksums: ./dist/digests.txt
+```
+你还需要调整 kmdo 配置，确保校验和文件以可预测的文件名生成，且与发布工作流中的配置（即 `./dist/checksums.txt`）保持一致。
+
+```yaml title=".kmdopkg.yaml"
+# 自定义校验和文件名称（需与工作流中 subject-checksums 配置一致）
+checksum:
+  name_template: "checksums.txt"
+
+# 自定义 Docker 镜像摘要文件名称（需与工作流中 subject-checksums 配置一致）
+docker_digest:
+  name_template: "digests.txt"
+```
+
+用户可通过以下命令验证：
+
+```bash
+gh attestation verify --owner <user-or-org> <filename>
+gh attestation verify --owner <user-or-org> <image>
+```
+
+同时请务必阅读以下文档：
+- [校验和配置](/zh-cn/guides/pkg/archives/checksums/)
+- [Docker 镜像摘要配置](/zh-cn/guides/pkg/archives/docker_digests/)

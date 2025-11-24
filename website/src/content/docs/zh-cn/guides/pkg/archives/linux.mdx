@@ -1,0 +1,182 @@
+---
+title: Linux 软件包（通过 nFPM）
+sidebar:
+  label: Linux 软件包（通过 nFPM）
+description: 'Linux 软件包（通过 nFPM） Releases.'
+i18nReady: true
+---
+
+
+
+Kmdo 可以结合 nfpm
+ 来生成并发布 .deb、.rpm、.apk、.ipk 以及 Archlinux 软件包。
+
+可用选项：
+
+```yaml title=".kmdopkg.yaml"
+nfpms:
+  nfpms:
+  - id: foo                         # nfpm 配置的唯一 ID
+    package_name: foo               # 软件包名（支持模板）
+    file_name_template: "{{ .ConventionalFileName }}"  # 包文件名模板
+
+    ids:                             # 构建 ID 列表（默认包含全部）
+      - foo
+      - bar
+
+    vendor: Drum Roll Inc.           # 软件厂商
+    homepage: https://example.com/  # 项目主页
+    maintainer: Drummer <drum-roll@example.com> # 维护者
+    description: |-
+      Drum rolls installer package.
+      Software to create fast and easy drum rolls.
+    license: Apache 2.0              # 软件许可证
+
+    formats:                         # 要生成的软件包格式
+      - apk
+      - deb
+      - rpm
+      - termux.deb
+      - archlinux
+
+    umask: 0o002                     # 默认文件权限掩码
+
+    dependencies:                    # 依赖的软件包
+      - git
+      - zsh
+    provides:                        # 提供的软件包
+      - bar
+    recommends:                      # 推荐安装的软件包
+      - bzr
+      - gtk
+    suggests:                        # 建议安装的软件包
+      - cvs
+      - ksh
+    conflicts:                       # 冲突的软件包
+      - svn
+      - bash
+    replaces:                        # 替换的软件包
+      - fish
+
+    bindir: /usr/bin                  # 二进制文件安装路径
+    libdirs:                          # 库文件路径
+      headers: /usr/include/something
+      cshared: /usr/lib/foo
+      carchive: /usr/lib/foobar
+
+    epoch: 2                          # 版本 Epoch
+    prerelease: beta1                 # 版本预发布标识
+    version_metadata: git             # 版本元数据
+    release: 1                        # 版本 Release
+    section: default                  # 分类
+    priority: extra                   # 优先级
+
+    meta: true                        # 是否生成元包（仅依赖，无实际文件）
+    changelog: ./foo.yml              # changelog 文件（支持 chglog 工具）
+
+    contents:                         # 包含文件
+      - src: path/to/foo
+        dst: /usr/bin/foo
+      - src: some/directory/
+        dst: /etc
+      - src: some/directory/
+        dst: /etc
+        type: tree
+        file_info:
+          mode: 0644
+          mtime: "{{.CommitDate}}"
+          owner: notRoot
+          group: notRoot
+      - src: path/to/foo.conf
+        dst: /etc/foo.conf
+        type: config
+      - src: /sbin/foo
+        dst: /usr/bin/foo
+        type: symlink
+      - src: path/to/local/bar.conf
+        dst: /etc/bar.conf
+        type: "config|noreplace"
+      - src: path/{{ .Os }}-{{ .Arch }}/bar.conf
+        dst: /etc/foo/bar-{{ .ProjectName }}.conf
+
+    scripts:                          # 安装/卸载脚本
+      preinstall: "scripts/preinstall.sh"
+      postinstall: "scripts/postinstall.sh"
+      preremove: "scripts/preremove.sh"
+      postremove: "scripts/postremove.sh"
+
+    mtime: "{{ .CommitDate }}"         # 包本身及内部文件的时间戳
+
+    overrides:                        # 针对不同包格式的覆盖配置
+      deb:
+        dependencies:
+          - baz (>= 1.2.3-0)
+          - some-lib-dev
+      rpm:
+        dependencies:
+          - baz >= 1.2.3-0
+          - some-lib-devel
+
+    # RPM 特定配置
+    rpm:
+      scripts:
+        pretrans: ./scripts/pretrans.sh
+        posttrans: ./scripts/posttrans.sh
+      summary: Explicit Summary for Sample Package
+      group: Unspecified
+      packager: kmdo <staff@kmdo.cc>
+      buildhost: foo.bar
+      compression: lzma
+      prefixes:
+        - /usr/bin
+      signature:
+        key_file: "{{ .Env.GPG_KEY_PATH }}"
+
+    # Deb 特定配置
+    deb:
+      lintian_overrides:
+        - statically-linked-binary
+        - changelog-file-missing-in-native-package
+      scripts:
+        rules: foo.sh
+        templates: templates
+      triggers:
+        interest:
+          - some-trigger-name
+        activate:
+          - another-trigger-name
+      breaks:
+        - some-package
+      signature:
+        key_file: "{{ .Env.GPG_KEY_PATH }}"
+        type: origin
+      fields:
+        Bugs: https://github.com/kumose-go/nfpm/issues
+      predepends:
+        - baz (>= 1.2.3-0)
+
+    # APK 特定配置
+    apk:
+      scripts:
+        preupgrade: ./scripts/preupgrade.sh
+        postupgrade: ./scripts/postupgrade.sh
+      signature:
+        key_file: "{{ .Env.GPG_KEY_PATH }}"
+        key_name: origin
+
+    # Archlinux 特定配置
+    archlinux:
+      scripts:
+        preupgrade: ./scripts/preupgrade.sh
+        postupgrade: ./scripts/postupgrade.sh
+      pkgbase: foo
+      packager: kmdo <staff@kmdo.com>
+
+    # IPK 特定配置
+    ipk:
+      abi_version:
+      alternatives:
+        - priority: 4
+          tar
+
+```

@@ -1,0 +1,62 @@
+---
+title: 源代码归档
+sidebar:
+  label: 源代码归档
+description: '打包源代码归档.'
+i18nReady: true
+---
+
+## 源代码归档
+
+你可以将当前标签的源代码归档添加到发布版本中。这在你需要对其进行签名时特别有用。
+
+```yaml title=".kmdopkg.yaml"
+source:
+  # 是否启用这个 pipeline
+  enabled: true
+
+  # 最终归档文件名模板
+  #
+  # 默认: '{{ .ProjectName }}-{{ .Version }}'
+  # 支持模板
+  name_template: "{{ .ProjectName }}"
+
+  # 归档格式
+  #
+  # 可用格式: tar, tgz, tar.gz, zip
+  # 默认: 'tar.gz'
+  format: "tar"
+
+  # 前缀
+  # 在归档内每个文件名前加的字符串
+  #
+  # 支持模板
+  prefix_template: "{{ .ProjectName }}-{{ .Version }}/"
+
+  # 额外想加入归档的文件/通配符
+  #
+  # 支持模板
+  files:
+    - LICENSE.txt                # 许可证文件
+    - README_{{.Os}}.md          # 平台相关的 README 文件
+    - CHANGELOG.md               # 更新日志
+    - docs/*                     # docs 目录下所有文件
+    - design/*.png               # design 目录下的所有 PNG 图片
+    - templates/**/*             # templates 下的所有文件和子目录
+    # 更完整的例子
+    - src: "*.md"                # 源文件匹配 *.md
+      dst: docs                  # 归档中放到 docs 目录下
+      # 添加文件到归档时是否去掉上层目录
+      strip_parent: true
+
+      # 文件信息
+      # 并非所有格式都支持所有字段
+      # 默认: 使用源文件信息
+      info:
+        owner: root
+        group: root
+        mode: 0644
+        # 文件修改时间，格式为 `time.RFC3339Nano`
+        mtime: 2008-01-02T15:04:05Z
+
+```

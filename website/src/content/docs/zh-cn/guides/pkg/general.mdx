@@ -1,0 +1,285 @@
+---
+title: 通用配置
+sidebar:
+  label: 通用配置
+description: '通用配置.'
+i18nReady: true
+---
+
+## 项目名称
+
+项目名称用于生成规则、归档文件等的名称中。
+
+如果未提供项目名称，则会根据 GitHub、GitLab kmup或 Gitea 的发布名称推断。
+
+```yaml title=".kmdopkg.yaml"
+project_name: myproject
+```
+
+## 元数据
+
+Kmdo 在运行结束前会在 `dist` 目录中创建一些元数据文件。
+
+您还可以设置一些可供其他功能使用的全局默认值。
+
+```yaml title=".kmdopkg.yaml"
+metadata:
+  # 设置元数据文件的修改时间戳。
+  #
+  # 模板：允许。
+  mod_timestamp: "{{ .CommitTimestamp }}"
+
+```
+
+# 分发文件夹
+
+默认情况下，Kmdo 会将工件创建在 `./dist` 文件夹中。
+如果需要更改，可以通过修改 `.kmdopkg.yaml` 文件来更改：
+
+```yaml title=".kmdopkg.yaml"
+# 默认: './dist'.
+dist: another-folder-that-is-not-dist
+```
+
+大多数情况下，你不需要更改这个设置。
+
+
+## 模版
+
+Kmdo 配置文件中的多个字段支持模板化。这些字段通常带有 `_template` 后缀，但有时也可能没有。每个
+部分的文档应该明确说明哪些字段支持模板化。
+
+### 通用字段
+
+在支持模板的字段中，这些字段始终可用：
+
+| key                | 描述                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `.ProjectName`     | 项目名称                                                                                                     |
+| `.Version`         | 正在发布的版本[^版本前缀]                                                                                      |
+| `.Branch`          | 当前 Git 分支                                                                                                |
+| `.Tag`             | 当前 Git 标签                                                                                                |
+| `.PreviousTag`     | 上一个 Git 标签，如果没有上一个标签，则为空。                                                                     |
+| `.ShortCommit`     | Git提交的短哈希值                                                                                            |
+| `.FullCommit`      | git提交的完整哈希值                                                                                   |
+| `.Commit`          | Git提交哈希值（已弃用）                                                                           |
+| `.CommitDate`      | UTC提交日期（RFC 3339格式）                                                                     |
+| `.CommitTimestamp` | Unix 格式的 UTC 提交日期                                                                         |
+| `.GitURL`          | Git远程URL                                                                                        |
+| `.GitTreeState`    | 要么“干净”，要么“脏”。                                                                                  |
+| `.IsGitClean`      | 当前 Git 状态是否干净                                                                 |
+| `.IsGitDirty`      | 当前 Git 状态是否已更改                                                                 |
+| `.Major`           | 版本的主要部分[^tag-is-semver]                                                             |
+| `.Minor`           | 版本号的次要部分[^tag-is-semver]                                                             |
+| `.Patch`           | 版本号的补丁部分[^tag-is-semver]                                                             |
+| `.Prerelease`      | 版本预发布部分，例如 `beta`[^tag-is-semver]                                            |
+| `.RawVersion`      | 由 `{Major}.{Minor}.{Patch}` 组成 [^tag-is-semver]                                                    |
+| `.ReleaseNotes`    | 生成的发行说明在变更日志步骤执行完毕后即可获取。                          |
+| `.IsDraft`         | 如果配置中设置了 `release.draft`，则返回 `true`，否则返回 `false`。                                   |
+| `.IsSnapshot`      | 如果设置了 `--snapshot` 参数，则返回 `true`，否则返回 `false`。                                                          |
+| `.IsNightly`       | 如果设置了 `--nightly` 参数，则返回 `true`，否则返回 `false`。                                                          |
+| `.IsSingleTarget`  | 如果设置了 `--single-target`，则返回 `true`，否则返回 `false`                                        |
+| `.Env`             | 包含系统环境变量的映射表                                                                |
+| `.Date`            | 当前 UTC 日期（RFC 3339 格式）                                                                       |
+| `.Now`             | 当前 UTC 日期以 `time.Time` 结构体的形式表示，允许使用所有 `time.Time` 函数（例如 `{{ .Now.Format "2006" }}`）。 |
+| `.Timestamp`       | 当前 UTC 时间（Unix 格式）                                                                            |
+| `.ModulePath`      | `go list -m` 报告的 go 模块路径                                                            |
+| `.ReleaseURL`      | 当前版本下载网址[^scm-release-url]                                                        |
+| `.Summary`         | git 摘要，例如 `v1.0.0-10-g34f56g3`[^git-summary]                                                 |
+| `.TagSubject`      | 带注释的标签消息主题，或它所指向的提交的消息主题[^git-tag-subject]    |
+| `.TagContents`     | 带注释的标签消息，或它所指向的提交的消息[^git-tag-body]                       |
+| `.TagBody`         | 带注释的标签消息的正文，或者它所指向的提交的消息正文[^git-tag-body]         |
+| `.Runtime.Goos`    | 等价于 `runtime.GOOS`                                                                               |
+| `.Runtime.Goarch`  | 等价于 `runtime.GOARCH`                                                                             |
+| `.Outputs`         | 自定义输出                                                                               |
+
+
+### 单值额外字段
+
+对于与单个工件相关的字段（例如，二进制文件名称），可能有一些额外的字段：
+
+| Key             | 描述                                   |
+| --------------- | --------------------------------------------- |
+| `.Os`           | `GOOS`                                        |
+| `.Arch`         | `GOARCH`                                      |
+| `.Arm`          | `GOARM`                                       |
+| `.Mips`         | `GOMIPS`                                      |
+| `.Amd64`        | `GOAMD64`                                     |
+| `.Arm64`        | `GOARM64`                         |
+| `.Mips64`       | `GOMIPS64`                        |
+| `.Ppc64`        | `GOPPC64`                         |
+| `.Riscv64`      | `GORISCV64`                       |
+| `.I386`         | `GO386`                           |
+| `.Target`       | 整个目标                  |
+| `.Binary`       | artifact 名称                                 |
+| `.ArtifactName` | artifact 名称                                 |
+| `.ArtifactPath` | artifact绝对路径                     |
+| `.ArtifactExt`  | artifact 扩展名 (如 `.exe`, `.dmg`, etc) |
+
+### nFPM 扩展字段
+
+在 nFPM 名称模板字段中，您可以使用以下附加字段：
+
+| Key                      | 描述                                                     |
+| ------------------------ | --------------------------------------------------------------- |
+| `.Release`               | nfpm 中发布信息                                    |
+| `.Epoch`                 | nfpm 发布时间                                      |
+| `.PackageName`           | 打包名称。如果未被覆盖，则与 `ProjectName` 相同。.      |
+| `.ConventionalFileName`  | nFPM 提供的常规软件包文件名。[^arm-names] |
+| `.ConventionalExtension` | nFPM 提供的常规封装扩展             |
+| `.Format`                | 封装格式                                                  |
+
+### Release body extra fields
+
+In the `release.body` field, you can use these extra fields:
+
+| Key          | Description                                                                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------|
+| `.Checksums` | 当前校验和文件的内容，或者如果设置了 `checksum.split`，<br/>则返回文件名/校验和内容的映射。仅在发布正文中可用。 |
+
+### Functions
+
+所有字段均提供以下功能：
+
+| 用法（Usage）                          | 描述（Description）                                                                                                                                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `replace "v1.2" "v" ""`                | 替换所有匹配项。参考 [ReplaceAll](https://pkg.go.dev/strings#ReplaceAll)                                                                                                                                             |
+| `split "1.2" "."`                      | 按分隔符拆分字符串。参考 [Split](https://pkg.go.dev/strings#Split)                                                                                                                                                  |
+| `time "01/02/2006"`                    | 以指定格式返回当前 UTC 时间（非确定性值，每次调用返回新时间）                                                                                                                                                       |
+| `contains "foobar" "foo"`              | 检查第一个字符串是否包含第二个字符串。参考 [Contains](https://pkg.go.dev/strings#Contains)                                                                                                                          |
+| `tolower "V1.2"`                       | 将输入字符串转为小写。参考 [ToLower](https://pkg.go.dev/strings#ToLower)                                                                                                                                             |
+| `toupper "v1.2"`                       | 将输入字符串转为大写。参考 [ToUpper](https://pkg.go.dev/strings#ToUpper)                                                                                                                                             |
+| `trim " v1.2  "`                       | 移除字符串首尾所有空白字符。参考 [TrimSpace](https://pkg.go.dev/strings#TrimSpace)                                                                                                                                   |
+| `trimprefix "v1.2" "v"`                | 若字符串以指定前缀开头，则移除该前缀。参考 [TrimPrefix](https://pkg.go.dev/strings#TrimPrefix)                                                                                                                       |
+| `trimsuffix "1.2v" "v"`                | 若字符串以指定后缀结尾，则移除该后缀。参考 [TrimSuffix](https://pkg.go.dev/strings#TrimSuffix)                                                                                                                       |
+| `dir .Path`                            | 返回路径中除最后一个元素外的所有部分（通常为路径的目录）。参考 [Dir](https://pkg.go.dev/path/filepath#Dir)                                                                                                          |
+| `base .Path`                           | 返回路径的最后一个元素。参考 [Base](https://pkg.go.dev/path/filepath#Base)                                                                                                                                           |
+| `abs .ArtifactPath`                    | 返回路径的绝对路径表示。参考 [Abs](https://pkg.go.dev/path/filepath#Abs)                                                                                                                                             |
+| `filter "text" "regex"`                | 仅保留匹配指定正则表达式的行，类似 `grep -E` 功能                                                                                                                                                                   |
+| `reverseFilter "text" "regex"`         | 仅保留不匹配指定正则表达式的行，类似 `grep -vE` 功能                                                                                                                                                                 |
+| `title "foo"`                          | 将字符串转为标题格式（以英语为语言规则）。参考 [Title](https://pkg.go.dev/golang.org/x/text/cases#Title)                                                                                                             |
+| `mdv2escape "foo"`                     | 按 MarkdownV2 规则转义字符，特别适用于 Telegram 集成场景                                                                                                                                                             |
+| `envOrDefault "NAME" "value"`          | 获取指定环境变量的值，若环境变量未设置则返回默认值                                                                                                                                                                   |
+| `isEnvSet "NAME"`                      | 若环境变量已设置且非空则返回 true，否则返回 false                                                                                                                                                                    |
+| `$m := map "KEY" "VALUE"`              | 从键值对列表创建映射（map），键和值必须均为字符串类型                                                                                                                                                                |
+| `indexOrDefault $m "KEY" "value"`      | 从指定映射中获取指定键的值，若键不存在则返回默认值                                                                                                                                                                   |
+| `incpatch "v1.2.4"`                    | 递增版本号的修订号（patch）部分[^panic-if-not-semver]                                                                                                                                                                |
+| `incminor "v1.2.4"`                    | 递增版本号的次版本号（minor）部分[^panic-if-not-semver]                                                                                                                                                               |
+| `incmajor "v1.2.4"`                    | 递增版本号的主版本号（major）部分[^panic-if-not-semver]                                                                                                                                                               |
+| `urlPathEscape "foo/bar"`              | 对 URL 路径进行转义。参考 [PathEscape](https://pkg.go.dev/net/url#PathEscape)（v2.5 及以上版本支持）                                                                                                                  |
+| `blake2b .ArtifactPath`                | 计算制品的 `blake2b` 校验和。参考 [Blake2b](https://pkg.go.dev/golang.org/x/crypto/blake2b)（v2.9 及以上版本支持）                                                                                                    |
+| `blake2s .ArtifactPath`                | 计算制品的 `blake2s` 校验和。参考 [Blake2s](https://pkg.go.dev/golang.org/x/crypto/blake2s)（v2.9 及以上版本支持）                                                                                                    |
+| `crc32 .ArtifactPath`                  | 计算制品的 `crc32` 校验和。参考 [CRC32](https://pkg.go.dev/hash/crc32)（v2.9 及以上版本支持）                                                                                                                        |
+| `md5 .ArtifactPath`                    | 计算制品的 `md5` 校验和。参考 [MD5](https://pkg.go.dev/crypto/md5)（v2.9 及以上版本支持）                                                                                                                          |
+| `sha224 .ArtifactPath`                 | 计算制品的 `sha224` 校验和。参考 [SHA224](https://pkg.go.dev/crypto/sha256)（v2.9 及以上版本支持）                                                                                                                    |
+| `sha384 .ArtifactPath`                 | 计算制品的 `sha384` 校验和。参考 [SHA384](https://pkg.go.dev/golang.org/x/crypto/sha3)（v2.9 及以上版本支持）                                                                                                          |
+| `sha256 .ArtifactPath`                 | 计算制品的 `sha256` 校验和。参考 [SHA256](https://pkg.go.dev/crypto/sha256)（v2.9 及以上版本支持）                                                                                                                    |
+| `sha1 .ArtifactPath`                   | 计算制品的 `sha1` 校验和。参考 [SHA1](https://pkg.go.dev/crypto/sha1)（v2.9 及以上版本支持）                                                                                                                          |
+| `sha512 .ArtifactPath`                 | 计算制品的 `sha512` 校验和。参考 [SHA512](https://pkg.go.dev/crypto/sha512)（v2.9 及以上版本支持）                                                                                                                    |
+| `sha3_224 .ArtifactPath`               | 计算制品的 `sha3_224` 校验和。参考 [SHA3-224](https://pkg.go.dev/golang.org/x/crypto/sha3)（v2.9 及以上版本支持）                                                                                                       |
+| `sha3_384 .ArtifactPath`               | 计算制品的 `sha3_384` 校验和。参考 [SHA3-384](https://pkg.go.dev/golang.org/x/crypto/sha3)（v2.9 及以上版本支持）                                                                                                       |
+| `sha3_256 .ArtifactPath`               | 计算制品的 `sha3_256` 校验和。参考 [SHA3-256](https://pkg.go.dev/golang.org/x/crypto/sha3)（v2.9 及以上版本支持）                                                                                                       |
+| `sha3_512 .ArtifactPath`               | 计算制品的 `sha3_512` 校验和。参考 [SHA3-512](https://pkg.go.dev/golang.org/x/crypto/sha3)（v2.9 及以上版本支持）                                                                                                       |
+| `mustReadFile "/foo/bar.txt"`          | 读取文件内容，若读取失败则报错（v2.12 及以上版本支持）                                                                                                                                                               |
+| `readFile "/foo/bar.txt"`              | 读取文件内容，若读取失败则返回空字符串（v2.12 及以上版本支持）                                                                                                                                                         |
+
+## 环境变量
+
+传递给所有钩子和构建的全局环境变量。
+
+如果您有一个名为 `FOOBAR` 的环境变量，并且其值为 `on`，那么您的
+
+`.kmdopkg.yaml` 文件可以这样使用它：
+
+```yaml title=".kmdopkg.yaml"
+env:
+  - FOO={{ .Env.FOOBAR }}
+  - ENV_WITH_DEFAULT={{ if index .Env "ENV_WITH_DEFAULT"  }}{{ .Env.ENV_WITH_DEFAULT }}{{ else }}default_value{{ end }}
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - binary: program
+```
+
+这样，你的前置钩子（在本例中为 `go mod tidy`）和底层构建（使用 `go build`）都会将 `FOO` 设置为 `on`。
+根目录的 `env` 部分也接受模板。
+
+## 全局钩子
+
+某些版本发布周期可能需要在其他所有操作之前或之后执行某些操作。
+
+Kmdo 通过全局钩子功能实现了这一点。
+
+
+`before` 部分允许设置全局钩子，这些钩子将在发布开始之前执行。
+
+配置非常简单，以下示例展示了所有可能的选项：
+
+    ```yaml title=".kmdopkg.yaml"
+    before:
+     # 要运行的命令模板。
+      hooks:
+      - make clean
+      - go generate ./...
+      - go mod tidy
+      - touch {{ .Env.FILE_TO_TOUCH }}
+    ```
+
+请注意，如果任何钩子失败，发布过程将中止。
+
+### 组合命令
+
+如果需要执行更复杂的操作，建议创建一个 shell 脚本并调用它。
+
+你也可以使用 `sh -c my_cmd`，但很快就会变得非常混乱。
+
+
+## Git
+
+这样可以更改某些 Git 命令的行为。
+
+```yaml title=".kmdopkg.yaml"
+git:
+  # 收集当前和上一个提交的标签时，应该使用什么对标签进行排序
+  # 如果同一个提交中有多个标签。
+  #
+  # 参见：https://git-scm.com/docs/git-tag#Documentation/git-tag.txt---sortltkeygt
+  #
+  # 默认值：'-version:refname'。
+  tag_sort: -version:creatordate
+
+  # 在收集标签时，应该使用什么来指定预发布后缀？
+  # 如果同一个提交中有多个标签，则收集当前标签和上一个标签。
+  prerelease_suffix: "-"
+
+  # Kmdo 会忽略的标签。
+  # 这意味着 Kmdo 不会将与以下任何值匹配的标签识别为先前标签或当前标签。
+  #
+  # 模板：允许。
+  ignore_tags:
+    - nightly
+    - "{{.Env.IGNORE_TAG}}"
+```
+
+## 报告大小
+
+如果您想密切关注二进制文件/软件包的大小，建议启用此功能。
+
+它会将以下类型的每个工件的大小报告到构建输出以及 `dist/artifacts.json` 文件中：
+
+- `Binary`
+- `UniversalBinary`
+- `UploadableArchive`
+- `PublishableSnapcraft`
+- `LinuxPackage`
+- `CArchive`
+- `CShared`
+- `Header`
+
+以下是可用的配置选项：
+
+```yaml title=".kmdopkg.yaml"
+# Whether to enable the size reporting or not.
+report_sizes: true
+```

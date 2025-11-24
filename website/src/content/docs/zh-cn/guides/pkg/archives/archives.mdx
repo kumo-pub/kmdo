@@ -1,0 +1,112 @@
+---
+title: 归档文件
+sidebar:
+  label: 归档文件
+description: '打包releases到归档文件.'
+i18nReady: true
+---
+
+## 归档文件
+
+构建生成的二进制文件将会与 `README` 和 `LICENSE` 一起打包到一个 `tar.gz` 文件中。在 `archives` 配置中，你可以自定义归档文件名、附加文件以及归档格式。
+
+下面是一个带有完整字段注释的 `archives` 配置示例：
+
+```yaml
+// kmdopkg.yaml
+archives:
+  - #
+    # 此归档的 ID。
+    #
+    # 默认值: 'default'。
+    id: my-archive
+
+    # 需要归档到此 archive 的构建 ID。
+    #
+    # <!-- md:inline_version v2.8 --> (在早期版本使用 'builds')。
+    # 默认值: 空（包含所有构建）。
+    ids:
+      - default
+
+    # 归档格式。
+    #
+    # 如果格式为 `binary`，则不创建归档，而是直接上传二进制文件。
+    #
+    # 可选格式:
+    # - `tar.gz`
+    # - `tgz`
+    # - `tar.xz`
+    # - `txz`
+    # - `tar.zst`
+    # - `tzst` # <!-- md:inline_version v2.1 -->。
+    # - `tar`
+    # - `gz`
+    # - `zip`
+    # - `binary`
+    #
+    # 默认值: ['tar.gz']。
+    format: "zip" # 单格式，已废弃。
+    formats: ["zip", "tar.gz"] # 多格式 <!-- md:inline_version v2.6 -->。
+
+    # 创建仅包含文件而不包含二进制的归档。
+    # 模板名称中不能包含 `Os`、`Arch` 等引用。
+    meta: true
+
+    # 归档名称模板。
+    #
+    # 默认值:
+    # - 如果格式为 `binary`:
+    #   - `{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}`
+    # - 其他格式:
+    #   - `{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}`
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+    # 为归档中的所有二进制文件设置文件信息。
+    #
+    # 默认值: 从源二进制文件复制。
+    builds_info:
+      group: root
+      owner: root
+      mode: 0644
+      # 格式为 `time.RFC3339Nano`
+      mtime: 2008-01-02T15:04:05Z
+
+    # 是否将所有文件放入单一目录。
+    # true 时，解压 'kmdo_Linux_arm64.tar.gz' 会生成 'kmdo_Linux_arm64' 目录。
+    # false 时，文件单独解压。
+    # 可自定义目录名称（支持模板）。
+    # 默认值: false。
+    wrap_in_directory: true
+
+    # 是否去掉二进制文件的父目录。
+    strip_binary_directory: true
+
+    # 针对特定 GOOS 的归档格式覆盖。
+    # 最常见的用例是在 Windows 上使用 zip。
+    format_overrides:
+      - goos: windows
+        format: "zip" # 单格式，已废弃。
+        formats: ["zip", "tar.gz"] # 多格式 <!-- md:inline_version v2.6 -->。
+
+    # 额外需要添加到归档的文件/通配符。
+    #
+    # 默认值: [ 'LICENSE*', 'README*', 'CHANGELOG', 'license*', 'readme*', 'changelog']。
+    files:
+      - LICENSE.txt
+      - README_{{.Os}}.md
+      - CHANGELOG.md
+      - docs/*
+      - design/*.png
+      - templates/**/*
+      - src: "*.md"
+        dst: docs
+        strip_parent: true
+        info:
+          owner: root
+          group: root
+          mtime: "{{ .CommitDate }}"
+          mode: 0644
+
+    # 禁用二进制文件数量检查。
+    allow_different_binary_count: true
+```

@@ -1,0 +1,166 @@
+---
+title: 简介
+sidebar:
+  label: 简介
+description: '简介 构建器使用。'
+i18nReady: true
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+Kmdo 支持多种编程语言和构建系统，通过其 _builder_ 接口实现。
+
+每个 _builder_ 接收构建配置，并将输出的二进制文件或库写入 `dist` 目录。
+
+目前支持多种 builder，并将持续增加更多选项。
+
+以下是支持的构建方式列表：
+
+<CardGrid stagger>
+
+  <Card>
+    <a href="/zh-cn/guides/pkg/builds/go/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/go-original-wordmark.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/favicon.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        使用 Kmdo 构建 Go 项目。
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/zh-cn/guides/pkg/builds/cpp/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/cplusplus-plain.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/cmake-plain.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        使用 CMake 构建 C/C++ 项目。
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/zh-cn/guides/pkg/builds/python/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/python-plain-wordmark.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/poetry-plain.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        使用 Poetry 构建 Python 项目。
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/zh-cn/guides/pkg/builds/rust/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/rust-original.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/cargo.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        使用 Cargo 构建 Rust 项目。
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/zh-cn/guides/pkg/builds/uv/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/python-plain-wordmark.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/uv.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        使用 UV 构建 Python 项目。
+      </div>
+    </a>
+  </Card>
+
+</CardGrid>

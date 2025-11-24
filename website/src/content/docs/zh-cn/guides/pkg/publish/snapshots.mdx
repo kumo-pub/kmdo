@@ -1,0 +1,46 @@
+---
+title: 快照
+sidebar:
+  label: 快照
+description: '快照 configuration.'
+i18nReady: true
+---
+
+有时我们需要生成项目的完整构建，但既无需验证任何内容，也无需将其上传到任何位置。
+
+kmdo 通过 `--snapshot` 标志和 `snapshot` 自定义配置段支持此功能：
+
+```yaml title=".kmdopkg.yaml"
+snapshot:
+snapshot:
+snapshot:
+  # 允许自定义生成的快照版本名称
+  #
+  # 注意：部分管道（如 nfpm）要求该名称符合语义化版本规范
+  #
+  # 默认值：`{{ .Version }}-SNAPSHOT-{{.ShortCommit}}`（格式：基础版本-SNAPSHOT-短提交哈希）
+  # 支持模板语法
+  version_template: "{{ incpatch .Version }}-devel"
+```
+
+:::tip
+
+    请勿在 `version_template` 中使用 `{{.Tag}}` 字段，因为版本号不应包含前导 `v` 字符。
+:::
+
+## 工作原理（How it works）
+当你运行 `kmdo pkg --snapshot` 时，`Version` 模板变量会被设置为 `snapshot.name_template` 的解析结果。这意味着若你在名称模板中使
+用 `{{ .Version }}`，将得到快照版本号。
+
+你也可在模板中通过以下方式判断是否为快照构建：
+
+```
+{{ if .IsSnapshot }}something{{ else }}something else{{ end }}
+```
+
+注意：kmdo 快照功能的设计初衷是用于本地构建或在 CI 流水线中验证构建结果。产物不会被上传，仅会生成到 `dist` 目录中。
+
+:::note["或许你在寻找其他功能？"]
+
+    - 若仅需构建二进制文件，无需生成任何软件包，请查看 [`kmdo pkg build` 命令](/zh-cn/ref/pkg/pkg_build/).
+:::

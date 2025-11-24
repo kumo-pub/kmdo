@@ -1,0 +1,198 @@
+---
+title: Krew 插件清单
+sidebar:
+  label: Krew 插件清单
+description: 'Krew Plugin Manifests configuration.'
+i18nReady: true
+---
+
+
+在发布到 GitHub 或 GitLab 后，kmdo 可生成并发布 **Krew 插件清单（Krew Plugin Manifest）** 到您有权访问的代码仓库中。
+
+有关 Krew 的更多信息，请查看其 [官方网站](https://krew.sigs.k8s.io)。
+
+`krews` 章节用于配置插件的生成规则：
+
+```yaml title=".kmdopkg.yaml"
+krews:
+  -
+    # 插件配方名称
+    #
+    # 默认值：项目名称
+    # 支持模板语法
+    name: myproject
+
+    # 要使用的归档产物 ID 列表
+    ids:
+    - foo
+    - bar
+
+    # 若构建环节生成多个 32 位 ARM 版本，指定要使用的版本
+    # 目前 Krew 插件仅支持一个 32 位 ARM 版本
+    #
+    # 默认值：6
+    goarm: 6
+
+    # 若构建环节生成多个 amd64 版本，指定要使用的版本
+    #
+    # 默认值：'v1'
+    goamd64: v3
+
+    # 注意：确保 url_template、令牌（token）以及指定的代码仓库（GitHub/GitLab）
+    # 所有者（owner）和名称（name）属于同一类型的平台。下一主版本将对此进行统一，
+    # 类似 scoop 配置的处理方式。
+
+    # 由指定令牌（token）对应的平台（GitHub/GitLab/Gitea）决定的下载 URL
+    # 默认值：
+    #   GitHub: 'https://github.com/<仓库所有者>/<仓库名称>/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
+    #   GitLab: 'https://gitlab.com/<仓库所有者>/<仓库名称>/-/releases/{{ .Tag }}/downloads/{{ .ArtifactName }}'
+    #   Gitea: 'https://gitea.com/<仓库所有者>/<仓库名称>/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
+    # 支持模板语法
+    url_template: "http://github.mycompany.com/foo/bar/releases/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # 提交信息模板，会使用项目名称和当前 Git 标签
+    commit_msg_template: "Krew 插件更新：{{ .ProjectName }} {{ .Tag }} 版本"
+
+    # 应用的官网地址
+    #
+    # 默认值：从全局元数据中推导
+    homepage: "https://example.com/"
+
+    # 应用的详细描述
+    # 通常建议每行不超过 80 个字符
+    #
+    # 支持模板语法
+    # 默认值：从全局元数据中推导
+    description: "一款用于快速便捷创建鼓点节奏的软件。"
+
+    # 应用的简短描述
+    # 通常建议长度不超过 50 个字符
+    #
+    # 支持模板语法
+    # 默认值：从全局元数据中推导
+    short_description: "快速便捷创建鼓点节奏的软件"
+
+    # 二进制文件的使用注意事项
+    # 通常建议每行不超过 80 个字符
+    caveats: "该二进制文件的使用方法"
+
+    # 启用后，kmdo 不会提交更新后的 Krew 插件，仅将插件文件保存到 dist 目录
+    # 发布责任由用户自行承担
+    # 若设为 auto：当标签中包含预发布标识（如 v1.0.0-rc1）时，不会上传到 Krew 插件仓库
+    skip_upload: true
+
+    # 用于推送生成文件的代码仓库配置
+    repository:
+      # 仓库所有者
+      #
+      # 支持模板语法
+      owner: caarlos0
+
+      # 仓库名称
+      #
+      # 支持模板语法
+      name: my-repo
+
+      # 可选：指定分支
+      #
+      # 默认值：仓库的默认分支
+      # 支持模板语法
+      branch: main
+
+      # 可选：指定令牌（若与 kmdo 所用令牌不同）
+      #
+      # 支持模板语法
+      token: "{{ .Env.GITHUB_PERSONAL_AUTH_TOKEN }}"
+
+      # 启用后，将创建拉取请求（PR）而非直接推送到指定分支
+      # 启用前请确保 'branch' 属性与基准分支（base）不同
+      #
+      # 可能需要个人访问令牌
+      pull_request:
+        # 是否启用拉取请求模式
+        enabled: true
+
+        # 是否将拉取请求设为草稿状态
+        draft: true
+
+        # 可选：设置拉取请求的正文内容
+        # 若仓库存在 PR 模板，将追加到该内容之后
+        #
+        # <!-- md:inline_version v2.12 -->（v2.12 及以上版本支持）
+        body: |
+          cc/ @foobar
+
+        # 基准分支可来自另一个仓库，此时上方的所有者（owner）和名称（name）将作为 HEAD 仓库，
+        # 支持跨仓库拉取请求
+        base:
+          owner: kumose
+          name: my-repo
+          branch: main
+
+      # 克隆普通 Git 仓库、创建文件、提交并推送
+      #
+      # 注意：仅当指定的 URL 非空时才会生效
+      git:
+        # 用于推送的 Git 地址
+        #
+        # 支持模板语法
+        url: 'ssh://git@myserver.com:repo.git'
+
+        # 用于向 Git 仓库提交代码的 SSH 私钥
+        # 可指定私钥路径或直接填写私钥内容
+        #
+        # 重要：该私钥不能设置密码保护！
+        # 警告：切勿在配置文件中暴露你的私钥！
+```
+
+
+## 限制条件
+
+- 每个归档产物仅允许包含一个二进制文件；
+- 不支持二进制发布模式（即 `archives.format` 设为 `binary` 的场景）；
+- 仅允许一个 `GOARM` 版本的构建产物；
+
+## 拉取请求（Pull Requests）
+
+kmdo 支持不直接推送到主分支，而是将更改推送到功能分支（feature branch），并创建拉取请求提交变更。
+
+### 模板（Templates）
+
+kmdo 会检查仓库中是否存在 `.github/PULL_REQUEST_TEMPLATE.md` 文件，若存在则将其内容作为拉取请求的正文。
+
+此举旨在为 `winget-pkgs`、`nixpkgs` 等仓库的维护者减少额外工作。
+
+### 跨仓库拉取请求（Cross-repository pull requests）
+
+你也可以将更改推送到分支仓库（fork），并在原始仓库的分支中创建拉取请求。
+
+以下是具体配置示例：
+
+```yaml title=".kmdopkg.yaml"
+# ...
+something: # can be nix, brews, etc...
+  - repository:
+      owner: john
+      name: repo
+      branch: "{{.ProjectName}}-{{.Version}}"
+      pull_request:
+        enabled: true
+        base:
+          owner: mike
+          name: repo
+          branch: main
+```
+
+此配置将实现以下操作：
+
+- 尝试将分支仓库（fork）`john/repo` 与原仓库 `mike/repo:main` 同步（仅 GitHub 平台支持）；
+- 在 `john/repo` 仓库的 `foo-1.2.3` 分支中创建相关文件（假设 `ProjectName=foo` 且 `Version=1.2.3`）。[^head]
+- 发起从 `john/repo` 到 `mike/repo` 的拉取请求，目标分支为 `main`。[^base]
+
+[^head]: 按 GitHub 术语，即 `head=john:repo:foo-1.2.3`（格式：用户名:仓库名:分支名）
+[^base]: 按 GitHub 术语，即 `base=mike:repo:main`（格式：用户名:仓库名:目标分支名）
+
+### 暂不支持的功能
+
+- 无法向分支仓库（fork）发起拉取请求（`go-github` 库缺少所需字段支持）；
+- 由于操作可能因多种原因失败，若发生错误，会将错误日志输出到发布记录中，但不会终止流水线执行。

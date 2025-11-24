@@ -1,0 +1,37 @@
+---
+title: Docker 摘要（Digests）
+sidebar:
+  label: Docker 摘要（Digests）
+description: 'Docker Digests Releases.'
+i18nReady: true
+---
+
+
+## Docker 摘要（Digests）
+
+生成一个 `digests.txt` 文件，包含所有已发布镜像和清单（manifest）的摘要信息及镜像名称。
+该文件特别适用于需要使用这些信息的场景，
+例如，将其传递给 [GitHub 的构建来源证明动作（GitHub's attestation action）](https://github.com/actions/attest-build-provenance)。
+
+以下是带注释的配置示例：
+
+```yaml title=".kmdopkg.yaml"
+docker_digest:
+  # 生成的摘要文件名称
+  #
+  # 默认值：'digests.txt'
+  # 支持模板语法
+  name_template: "{{.ProjectName}}_digest.txt"  # 修正：模板变量需添加 . 前缀（{{.ProjectName}}）
+
+  # 若不想生成摘要文件，可将此值设为 true
+  #
+  # 支持模板语法
+  disable: "{{ .Env.NO_DIGEST }}"
+```
+
+有关如何使用此功能为镜像提供证明（attest）的信息，请参阅 [这个页面](/zh-cn/guides/pkg/publish/attestations/)。
+
+:::tip["`sha256:` 前缀"]
+
+    GitHub 要求摘要信息不含 `sha256:` 前缀，因此我们会截取摘要中 `:` 之前的部分（即移除前缀）。
+:::

@@ -1,0 +1,169 @@
+---
+title: Introduction
+sidebar:
+  label: Introduction
+description: 'Introduction building.'
+i18nReady: true
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+Kmdo supports multiple programming languages and build
+systems through its _builder_ interfaces.
+
+A _builder_ gets a build configuration and emits binaries/libraries into the
+`dist` directory.
+
+Multiple builders are supported, with more coming soon.
+
+Here's the list:
+
+
+<CardGrid stagger>
+
+  <Card>
+    <a href="/en/guides/pkg/builds/go/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/go-original-wordmark.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/favicon.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        Build and package Go applications with Kmdo.
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/en/guides/pkg/builds/cpp/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/cplusplus-plain.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/cmake-plain.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        Build and manage C/C++ projects with CMake.
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/en/guides/pkg/builds/go/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/python-plain-wordmark.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/poetry-plain.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        Build and manage Python projects using Poetry.
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/en/guides/pkg/builds/rust/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/rust-original.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/cargo.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        Build and manage Rust projects with Cargo.
+      </div>
+    </a>
+  </Card>
+
+  <Card>
+    <a href="/en/guides/pkg/builds/uv/" style="text-decoration:none; color:inherit;">
+      <div style="
+        display:flex;
+        gap:1rem;
+        margin-bottom:1rem;
+        justify-content:center;
+        align-items:center;
+      ">
+        <img
+          src="/lang/python-plain-wordmark.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+        <img
+          src="/lang/uv.svg"
+          style="width:45%; border-radius:0.5rem;"
+        />
+      </div>
+
+      <div style="
+        text-align:center;
+        margin-top:0.5rem;
+        padding-top:0.5rem;
+      ">
+        Build and manage Python projects using uv.
+      </div>
+    </a>
+  </Card>
+
+</CardGrid>

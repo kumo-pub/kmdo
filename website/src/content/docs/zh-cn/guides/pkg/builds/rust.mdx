@@ -1,0 +1,150 @@
+---
+title: rust
+sidebar:
+  label: rust
+description: 'rust building.'
+i18nReady: true
+---
+
+现在你可以通过 `cargo zigbuild` 结合 Kmdo 构建 Rust 二进制文件！
+
+只需将 `builder` 设置为 `rust` 即可，示例如下：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  # 可通过 YAML 列表定义多个构建配置
+  - #
+    # 构建的唯一标识 ID
+    #
+    # 默认值：项目目录名称
+    id: "my-build"
+
+    # 使用 Rust 构建工具链
+    builder: rust
+
+    # 二进制文件名称
+    # 支持路径格式（例如 `bin/app`），用于将二进制文件封装到指定目录中
+    #
+    # 默认值：项目目录名称
+    binary: program
+
+    # 待构建的目标平台列表（遵循 Rust 目标平台格式）
+    # 默认值：[ "x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-gnu", "aarch64-unknown-linux-gnu", "aarch64-apple-darwin" ]
+    targets:
+      - x86_64-apple-darwin
+      - x86_64-pc-windows-gnu
+
+    # 包含代码的项目（子）目录路径
+    # 此目录将作为 cargo 构建命令的工作目录
+    #
+    # 默认值："."（当前目录）
+    dir: my-app
+
+    # 指定构建时使用的 cargo 可执行文件路径
+    # 大多数场景下可忽略此配置
+    #
+    # 默认值："cargo"
+    # 支持：模板语法
+    tool: "cross"
+
+    # 设置要执行的构建命令
+    # 例如：若需构建测试相关产物，可将其设为 "test"
+    # 大多数场景下可忽略此配置
+    #
+    # 默认值：zigbuild（即执行 cargo zigbuild）
+    command: build
+
+    # 自定义构建参数
+    #
+    # 支持：模板语法
+    # 默认值："--release"（发布模式构建）
+    flags:
+      - --release
+      - -p=subproject # 用于 cargo 工作区（cargo-workspaces）场景，指定构建子项目
+
+    # 构建过程中需设置的自定义环境变量
+    # 无效的环境变量将被忽略
+    #
+    # 默认值：系统环境变量 + 全局 env 配置段
+    # 支持：模板语法
+    env:
+      - FOO=bar
+
+    # 钩子可用于自定义最终二进制产物（如执行生成器等）
+    #
+    # 支持：模板语法
+    hooks:
+      pre: ./foo.sh  # 构建前执行的脚本
+      post: ./script.sh {{ .Path }}  # 构建后执行的脚本（传入二进制产物绝对路径）
+
+    # 若设为 true，则跳过该构建配置
+    # 适用于库类型项目（无需构建二进制产物）
+    skip: false
+```
+
+部分选项目前暂不支持[^fail]，但至少已可用于简单项目！
+
+:::tip
+
+  了解更多关于 [构建钩子](/zh-cn/guides/pkg/builds/hooks/) 的信息。
+:::
+
+kmdo 会为每个已定义的目标平台执行 `rustup target add` 命令。
+你可以通过前置钩子（before hooks）安装 `cargo-zigbuild`。
+若需改用 `cargo-cross`，请确保其已安装，然后进行以下少量修改：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - # Use cargo cross:
+    builder: rust
+    tool: cross
+    command: build
+    targets:
+      - x86_64-apple-darwin
+      - x86_64-pc-windows-gnu
+```
+
+## 通过 Cargo 发布
+
+可通过 [全局后置钩子](/zh-cn/guides/pkg/builds/hooks/) 实现发布：
+
+```yaml title=".kmdopkg.yaml"
+# global after hooks
+after:
+  - cmd: "cargo publish {{ if .IsSnapshot }}--dry-run{{ end }} --quiet --no-verify"
+```
+
+## 注意事项
+
+### 目标平台
+
+kmdo 会将 Rust 的操作系统/架构三元组（Os/Arch triple）转换为 GOOS/GOARCH 组合，因此模板语法的使用方式与之前保持一致。
+原始目标平台名称可通过模板中的 `.Target` 访问，同时还支持访问 `.Vendor`（供应商）和 `.Environment`（环境）字段。
+
+### 环境配置
+
+kmdo 不会为你安装 Cargo、Rustup、Zig 或 cargo-zigbuild。
+请确保在运行 kmdo 前手动安装这些工具。
+
+注意：你可能还需要执行 `rustup default stable` 命令（设置稳定版 Rust 为默认工具链）。
+
+不过，kmdo **会** 为你声明的每个目标平台自动执行 `rustup target add` 命令（安装对应平台的编译目标）。
+
+你也可以将这些工具的安装步骤添加到 [全局前置钩子](/zh-cn/guides/pkg/builds/hooks/) 中，示例如下：
+
+```yaml title=".kmdopkg.yaml"
+before:
+  hooks:
+    - rustup default stable
+    - cargo install --locked cargo-zigbuild
+```
+
+### Cargo 工作区
+
+使用 Cargo 工作区的项目可能因使用场景不同而无法正常工作。
+若需尝试，可在 `flags` 配置中添加 `-p=[名称]`（指定工作区中的子项目）。
+我们可能会在未来对此进行优化。
+
+[^fail]:
+    若尝试使用暂不支持的选项，kmdo 会直接报错。可通过 `kmdo pkg r --snapshot --clean` 命令进行测试。
+

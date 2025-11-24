@@ -1,0 +1,253 @@
+---
+title: 签名归档包、软件包及校验和文件
+sidebar:
+  label: 签名归档包、软件包及校验和文件
+description: '签名归档包、软件包及校验和文件 Releases.'
+i18nReady: true
+---
+
+
+签名机制可确保制品由你本人生成，用户可通过将生成的签名与你的公开签名密钥进行比对，验证制品的真实性。
+
+kmdo 支持为可执行文件和归档包两类制品提供签名功能。
+
+## 用法（Usage）
+
+签名功能需与校验和文件配合使用，通常仅需对校验和文件进行签名即可满足验证需求。
+
+默认配置会通过 [GnuPG](https://www.gnupg.org/) 工具，使用你的默认密钥为校验和文件生成独立签名（detached signature）。
+
+如需启用签名功能，只需在配置中添加以下内容：
+
+```yaml title=".kmdopkg.yaml"
+signs:
+  - artifacts: checksum
+```
+
+如需自定义签名流程，可使用以下配置选项：
+
+```yaml title=".kmdopkg.yaml"
+signs:
+  - # 签名配置的唯一标识 ID（必须唯一，用于区分多个签名规则）
+    #
+    # 默认值：'default'
+    id: foo
+
+    # 签名文件的名称
+    #
+    # 默认值：'${artifact}.sig'（格式为「制品文件名.sig」）
+    # 支持模板语法
+    signature: "${artifact}_sig"  # 示例：签名文件名为「制品文件名_sig」
+
+    # 签名工具的命令路径（可指定绝对路径或系统环境变量中的命令）
+    #
+    # 默认值：'gpg'（使用系统配置的 GnuPG 工具）
+    cmd: gpg2  # 示例：使用 gpg2 工具执行签名
+
+    # 传递给签名工具的命令行参数
+    #
+    # 若需使用特定密钥签名，可配置为：
+    # args: ["-u", "<密钥 ID、指纹、邮箱...>", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    # （含义：-u 指定签名密钥，--output 指定签名输出文件，--detach-sign 生成独立签名）
+    #
+    # 默认值：["--output", "${signature}", "--detach-sign", "${artifact}"]
+    # 支持模板语法
+    args: ["--output", "${signature}", "${artifact}", "{{ .ProjectName }}"]  # 示例：自定义签名参数
+
+    # 要签名的制品类型（指定需生成签名的产物类别）
+    #
+    # 有效值说明：
+    # - none:       不进行任何签名
+    # - all:        所有制品（包含以下所有类别）
+    # - checksum:   校验和文件（如 SHA256SUMS 等）
+    # - source:     源码归档包
+    # - package:    Linux 系统软件包（deb、rpm、apk 等格式）
+    # - installer:  Windows MSI 安装包（仅专业版 Pro 支持）
+    # - diskimage:  macOS DMG 镜像文件（仅专业版 Pro 支持）
+    # - archive:    归档流程（archive 配置）生成的压缩包
+    # - sbom:       为其他制品生成的软件物料清单（SBOM）文件
+    # - binary:     二进制可执行文件（仅当 `archives.format` 设为 'binary' 时生效；其他场景建议用 binary_signs 配置）
+    #
+    # 默认值：'none'（默认不启用签名）
+    artifacts: all
+
+    # 要签名的制品 ID 列表（指定具体哪些制品需要应用此签名规则）
+    #
+    # 注意：若 `artifacts` 设为 checksum 或 source，此配置无效
+    ids:
+      - foo
+      - bar  # 示例：仅为 ID 为 foo、bar 的制品生成签名
+
+    # 作为标准输入（stdin）传递给签名命令的数据
+    #
+    # 支持模板语法
+    stdin: "{{ .Env.GPG_PASSWORD }}"  # 示例：从环境变量传入 GPG 密钥解密密码
+
+    # 作为标准输入（stdin）传递给签名命令的文件路径
+    stdin_file: ./.password  # 示例：从 .password 文件读取密钥解密密码
+
+    # 指定签名命令需写入的证书名称（用于存储签名相关证书）
+    #
+    # 后续可在 `args` 配置中通过 `${certificate}` 或 `.Env.certificate` 引用该名称
+    #
+    # 此配置特别适用于 cosign 无密钥签名场景，其他场景通常无需使用
+    #
+    # 注意：此处需填写证书名称（而非文件路径）
+    # 支持模板语法
+    certificate: '{{ trimsuffix .Env.artifact ".tar.gz" }}.pem'  # 示例：移除制品后缀 .tar.gz 后，生成 .pem 格式证书
+
+    # 传递给签名命令及模板的环境变量列表
+    env:
+      - FOO=bar
+      - HONK=honkhonk  # 示例：自定义环境变量
+
+    # 签名命令的标准输出（stdout）和标准错误（stderr）默认会被丢弃，仅当 kmdo 启用 `--verbose` 时显示
+    # 若需强制显示输出（便于调试签名失败问题），可将此配置设为 true
+    output: true
+```
+
+### 可用变量名称（Available variable names）
+
+以下环境变量可在支持模板语法的字段中使用：
+
+- `${artifact}`：待签名制品的路径
+- `${artifactID}`：待签名制品的 ID
+- `${certificate}`：证书文件名（若已配置 `certificate` 字段）
+- `${signature}`：签名文件名
+
+
+## 使用 cosign 签名（Signing with cosign）
+
+你也可以通过 [cosign][] 为制品签名。
+
+假设你的代码仓库根目录下存在 `cosign.key` 文件，且已设置 `COSIGN_PWD` 环境变量（用于解密密钥），以下是一个简单的使用示例：
+
+
+```yaml title=".kmdopkg.yaml"
+signs:
+  - cmd: cosign
+    stdin: "{{ .Env.COSIGN_PWD }}"
+    args:
+      - "sign-blob"
+      - "--key=cosign.key"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes" # needed on cosign 2.0.0+
+    artifacts: all
+```
+
+你的用户可通过以下命令验证签名：
+
+```bash
+cosign verify-blob -key cosign.pub -signature file.tar.gz.sig file.tar.gz
+```
+
+## 签名可执行文件（Signing executables）
+
+可在构建完成后，通过后置钩子（post hooks）为可执行文件签名。
+
+
+### 使用 gon 签名
+
+:::note
+
+[gon][] 已被原维护者停止维护，但该项目在 [fork 仓库][gon-fork] 中继续存在，本文将使用该分支版本。
+
+:::
+
+例如，你可以使用 [gon][gon-fork] 为 macOS 应用程序创建公证（notarized）版本：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - binary: foo
+    id: foo
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+
+  # notice that we need a separated build for the MacOS binary only:
+  - binary: foo
+    id: foo-macos
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    hooks:
+      post: gon gon.hcl
+```
+
+And:
+
+```terraform
+# gon.hcl
+#
+# The path follows a pattern
+# ./dist/BUILD-ID_TARGET/BINARY-NAME
+source = ["./dist/foo-macos_darwin_amd64/foo"]
+bundle_id = "com.mitchellh.example.terraform"
+
+apple_id {
+  username = "mitchell@example.com"
+  password = "@env:AC_PASSWORD"
+}
+
+sign {
+  application_identity = "Developer ID Application: Mitchell Hashimoto"
+}
+```
+
+请注意，应用公证流程可能需要一定时间，且必须在 macOS 设备上执行。
+
+若你通过 gon 签名时生成了 ZIP 压缩包或 DMG 镜像文件，需确保其文件名与其他制品的命名规则保持一致——因为 kmdo 
+仅会按指定参数执行 `gon` 命令，无法控制这些文件的生成细节。相关地，你可能需要在 `release` 配置段的 `extra_files` 中列出这些额外制品，以确保它们能被正常上传。
+
+
+### 使用 cosign 签名（With cosign）
+
+你也可以直接通过 [cosign][] 为二进制文件签名，但需手动将生成的 `.sig` 签名文件添加到发布产物和/或归档包中：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - hooks:
+      post:
+        - sh -c "COSIGN_PASSWORD=$COSIGN_PWD cosign sign-blob --key cosign.key --output-signature dist/{{ .ProjectName }}_{{ .Version }}_{{ .Target }}.sig {{ .Path }}"
+
+# add to the release directly:
+release:
+  extra_files:
+    - glob: dist/*.sig
+
+# or just to the archives:
+archives:
+  - files:
+      - dist/*.sig
+```
+
+该方式虽可正常使用，但更建议直接使用签名流程（signing pipe）。
+
+## 签名 Docker 镜像及清单
+
+详情请参考 [Docker 镜像签名](/zh-cn/guides/pkg/sign/docker_sign/)。
+
+## 限制说明（Limitations）
+
+你可以使用任何支持“输出签名文件”或“直接修改待签名文件”的命令进行签名。
+
+若你使用的签名工具仅支持将签名内容输出到标准输出（STDOUT）而非文件，可通过 `sh -c` 命令包裹原命令实现签名，示例如下：
+
+```yaml title=".kmdopkg.yaml"
+signs:
+  - cmd: sh
+    args:
+      - "-c"
+      - 'echo "${artifact} is signed and I can prove it" | tee ${signature}'
+    artifacts: all
+```
+
+该方式可正常工作。只需确保始终使用 `${signature}` 模板变量指定签名结果文件名，并使用 `${artifact}` 模板变量指定原始待签名文件。
+
+[gon]: https://github.com/mitchellh/gon
+[gon-fork]: https://github.com/Bearer/gon
+[cosign]: https://github.com/sigstore/cosign

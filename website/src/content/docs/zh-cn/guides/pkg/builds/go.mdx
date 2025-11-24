@@ -1,0 +1,487 @@
+---
+title: Go
+sidebar:
+  label: Go
+description: 'Go building.'
+i18nReady: true
+---
+
+
+构建可以通过多种方式进行自定义。
+
+你可以指定要为哪些 `GOOS`、`GOARCH` 和 `GOARM` 构建二进制文件（`kmdo` 会生成所有组合的矩阵），同时还可以修改二进制文件名称、编译标志、环境变量、钩子等。
+
+下面是一个带注释的 builds 配置示例，列出了所有可用字段：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  # 可定义多个构建配置（以 YAML 列表形式）
+  - # 构建配置的 ID（用于区分多个构建规则）
+    #
+    # 默认值：项目目录名称
+    id: "my-build"
+
+    # main.go 文件或主包的路径
+    # 注意：当与 `gomod.proxy` 配合使用时，此处必须指定包路径（而非文件路径）
+    #
+    # 默认值：`.`（项目根目录）
+    main: ./cmd/my-app
+
+    # 二进制文件名称
+    # 可指定路径（例如 `bin/app`），将二进制文件封装到目录中
+    #
+    # 默认值：项目目录名称
+    binary: program
+
+    # 自定义构建标志（传递给 go build 的额外参数）
+    #
+    # 支持模板语法
+    flags:
+      - -tags=dev  # 示例：启用 dev 构建标签
+      - -v         # 示例：显示构建详细日志
+
+    # 自定义汇编器标志（asmflags）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Compile_packages_and_dependencies
+    # 和 https://pkg.go.dev/cmd/asm
+    #
+    # 支持模板语法
+    asmflags:
+      - -D mysymbol                # 示例：定义汇编符号 mysymbol
+      - all=-trimpath={{.Env.GOPATH}}  # 示例：移除所有包的 GOPATH 路径前缀（提升可移植性）
+
+    # 自定义编译器标志（gcflags）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Compile_packages_and_dependencies
+    # 和 https://pkg.go.dev/cmd/compile
+    #
+    # 支持模板语法
+    gcflags:
+      - all=-trimpath={{.Env.GOPATH}}  # 示例：所有包移除 GOPATH 路径前缀
+      - ./dontoptimizeme=-N           # 示例：对 dontoptimizeme 包禁用优化（便于调试）
+
+    # 自定义链接器标志（ldflags）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Compile_packages_and_dependencies
+    # 和 https://pkg.go.dev/cmd/link
+    #
+    # 默认值：'-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=kumose'
+    # （含义：-s 移除符号表，-w 移除调试信息，-X 注入版本、提交哈希、构建时间等变量）
+    # 支持模板语法
+    ldflags:
+      - -s -w -X main.build={{.Version}}  # 示例：注入构建版本到 main.build 变量
+      - ./usemsan=-msan                   # 示例：对 usemsan 包启用内存安全检测（msan）
+
+    # 自定义 Go 构建模式
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Build_modes
+    #
+    # 有效值：
+    # - `c-shared`：生成 C 语言共享库（.so/.dll/.dylib）
+    # - `c-archive`：生成 C 语言静态库（.a/.lib）
+    # - `pie`：生成位置无关可执行文件（Position-Independent Executable）
+    buildmode: c-shared
+
+    # 自定义构建标签（build tags）模板
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Build_constraints（构建约束）
+    tags:
+      - osusergo    # 示例：使用纯 Go 实现的用户系统相关功能（不依赖 CGO）
+      - netgo       # 示例：使用纯 Go 实现的网络库（不依赖系统网络库）
+      - static_build# 示例：静态构建标签（需配合 CGO_ENABLED=0 使用）
+      - feature     # 示例：自定义功能标签（用于条件编译）
+
+    # 构建过程中设置的自定义环境变量
+    # 无效的环境变量会被忽略
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    #
+    # 默认值：系统环境变量（os.Environ()）+ 全局 env 配置段
+    # 支持模板语法
+    env:
+      - CGO_ENABLED=0  # 示例：禁用 CGO（生成纯 Go 静态二进制文件）
+      # 复杂的模板化环境变量（根据系统和架构动态设置编译器）
+      - >-
+        {{- if eq .Os "darwin" }}
+          {{- if eq .Arch "amd64"}}CC=o64-clang{{- end }}          # 示例：macOS amd64 架构使用 o64-clang 编译器
+          {{- if eq .Arch "arm64"}}CC=aarch64-apple-darwin20.2-clang{{- end }}  # 示例：macOS arm64 架构使用对应编译器
+        {{- end }}
+        {{- if eq .Os "windows" }}
+          {{- if eq .Arch "amd64" }}CC=x86_64-w64-mingw32-gcc{{- end }}  # 示例：Windows amd64 架构使用交叉编译器
+        {{- end }}
+
+    # 要构建的目标操作系统（GOOS）列表
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    #
+    # 默认值：[ 'darwin', 'linux', 'windows' ]（macOS、Linux、Windows）
+    goos:
+      - freebsd  # 示例：构建 FreeBSD 系统版本
+      - windows  # 示例：构建 Windows 系统版本
+
+    # 要构建的目标架构（GOARCH）列表
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    #
+    # 默认值：[ '386', 'amd64', 'arm64' ]（32位x86、64位x86、ARM64）
+    goarch:
+      - amd64  # 示例：64位 x86 架构
+      - arm    # 示例：32位 ARM 架构
+      - arm64  # 示例：64位 ARM 架构（如手机、树莓派4）
+
+    # 当 GOARCH 为 arm 时，指定目标 ARM 版本（GOARM）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    # 和 https://go.dev/wiki/MinimumRequirements#microarchitecture-support（微架构支持）
+    #
+    # 默认值：[ 6 ]（支持 ARMv6 及以上版本，兼容树莓派1/2）
+    goarm:
+      - 6  # 示例：ARMv6 版本
+      - 7  # 示例：ARMv7 版本（支持硬件浮点，性能更优）
+
+    # 当 GOARCH 为 amd64 时，指定目标 AMD64 微架构版本（GOAMD64）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    # 和 https://go.dev/wiki/MinimumRequirements#microarchitecture-support
+    #
+    # 默认值：[ 'v1' ]（兼容所有 AMD64 架构，最低兼容性）
+    goamd64:
+      - v2  # 示例：支持 SSE2、SSE3、SSSE3 指令集
+      - v3  # 示例：支持 AVX、AVX2 指令集（性能更优，需较新 CPU）
+
+    # 当 GOARCH 为 arm64 时，指定目标 ARM64 微架构版本（GOARM64）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    # 和 https://go.dev/wiki/MinimumRequirements#microarchitecture-support
+    #
+    # 默认值：[ 'v8.0' ]（兼容所有 ARMv8.0 及以上架构）
+    # <!-- md:inline_version v2.4 -->（kmdo v2.4 及以上版本支持）
+    goarm64:
+      - v9.0  # 示例：支持 ARMv9.0 微架构（如苹果 M2、AWS Graviton3）
+
+    # 当 GOARCH 为 mips/mips64/mipsle/mips64le 时，指定 MIPS 浮点模式（GOMIPS/GOMIPS64）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    # 和 https://go.dev/wiki/MinimumRequirements#microarchitecture-support
+    #
+    # 默认值：[ 'hardfloat' ]（硬件浮点模式，性能更优）
+    # <!-- md:inline_version v2.4 -->（kmdo v2.4 及以上版本支持）
+    gomips:
+      - hardfloat  # 示例：硬件浮点模式
+      - softfloat  # 示例：软件浮点模式（兼容无硬件浮点的 CPU）
+
+    # 当 GOARCH 为 386 时，指定目标 386 微架构版本（GO386）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    # 和 https://go.dev/wiki/MinimumRequirements#microarchitecture-support
+    #
+    # 默认值：[ 'sse2' ]（支持 SSE2 指令集，兼容大多数 32位 CPU）
+    # <!-- md:inline_version v2.4 -->（kmdo v2.4 及以上版本支持）
+    go386:
+      - sse2       # 示例：支持 SSE2 指令集
+      - softfloat  # 示例：软件浮点模式
+
+    # 当 GOARCH 为 ppc64 时，指定目标 PPC64 微架构版本（GOPPC64）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    # 和 https://go.dev/wiki/MinimumRequirements#microarchitecture-support
+    #
+    # 默认值：[ 'power8' ]（支持 Power8 及以上架构）
+    # <!-- md:inline_version v2.4 -->（kmdo v2.4 及以上版本支持）
+    goppc64:
+      - power8  # 示例：Power8 架构
+      - power9  # 示例：Power9 架构（性能更优）
+
+    # 当 GOARCH 为 riscv64 时，指定目标 RISC-V 微架构版本（GORISCV64）
+    # 更多信息参考：https://pkg.go.dev/cmd/go#hdr-Environment_variables
+    # 和 https://go.dev/wiki/MinimumRequirements#microarchitecture-support
+    #
+    # 默认值：[ 'rva20u64' ]（RISC-V 2020 基础指令集）
+    # <!-- md:inline_version v2.4 -->（kmdo v2.4 及以上版本支持）
+    goriscv64:
+      - rva22u64  # 示例：RISC-V 2022 扩展指令集
+
+    # 要忽略的构建组合（GOOS + GOARCH + GOARM 等）
+    ignore:
+      - goos: darwin
+        goarch: 386  # 示例：忽略 macOS 32位 x86 架构（苹果已放弃支持）
+      - goos: linux
+        goarch: arm
+        goarm: 7     # 示例：忽略 Linux ARMv7 架构
+      - goarm: mips64  # 示例：忽略所有 GOARM 为 mips64 的组合（无效配置，仅作示例）
+      - gomips: hardfloat  # 示例：忽略 MIPS 硬件浮点模式
+      - goamd64: v4  # 示例：忽略 AMD64 v4 微架构
+
+    # 可选：覆盖构建矩阵生成逻辑，直接指定最终目标列表
+    #
+    # 格式：`{goos}_{goarch}`，并可追加后缀：`_{goarm}`、`_{goamd64}`、`_{gomips}` 等（按需添加）
+    #
+    # 特殊值：
+    # - go_118_first_class：Go 1.18 官方支持的一级平台（如 darwin_amd64、linux_arm64 等）
+    # - go_first_class：最新稳定版 Go 支持的一级平台（当前与 go_118_first_class 一致）
+    #
+    # 注意：此配置会覆盖 `goos`、`goarch`、`goarm` 等所有架构相关配置及 `ignore` 配置
+    targets:
+      - go_first_class       # 示例：包含最新 Go 一级平台
+      - go_118_first_class   # 示例：包含 Go 1.18 一级平台
+      - linux_amd64_v1       # 示例：Linux amd64 v1 微架构
+      - darwin_arm64         # 示例：macOS ARM64 架构（苹果 M 系列芯片）
+      - linux_arm_6          # 示例：Linux ARMv6 架构
+
+    # 指定构建时使用的 Go 二进制文件路径/名称
+    # 大多数场景下可忽略此配置（使用系统默认 Go 版本）
+    #
+    # 默认值："go"（系统环境变量中配置的 Go）
+    # 支持模板语法
+    # <!-- md:inline_version v2.5 -->（kmdo v2.5 及以上版本支持）
+    tool: "go1.13.4"  # 示例：使用 Go 1.13.4 版本构建
+
+    # 指定要执行的 Go 命令（默认是 build）
+    # 例如：若需构建测试二进制文件，可设置为 "test"
+    # 大多数场景下可忽略此配置
+    #
+    # 默认值：build
+    command: test  # 示例：执行 go test 构建测试文件
+
+    # 设置输出二进制文件的修改时间戳（用于实现可复现构建）
+    # 传递空字符串可跳过修改
+    #
+    # 支持模板语法
+    mod_timestamp: "{{ .CommitTimestamp }}"  # 示例：使用代码提交时间作为时间戳
+
+    # 钩子（Hooks）：用于自定义最终二进制文件（如执行代码生成、后处理等）
+    #
+    # 支持模板语法
+    hooks:
+      pre: rice embed-go  # 示例：构建前执行 rice embed-go（嵌入静态资源）
+      post: ./script.sh {{ .Path }}  # 示例：构建后执行脚本，传入二进制文件路径（.Path）
+
+    # 若为 true，跳过当前构建配置
+    # 适用于库项目（无需构建可执行文件）
+    #
+    # 支持模板语法（<!-- md:inline_version v2.3 -->，kmdo v2.3 及以上版本支持）
+    skip: false
+
+    # 默认情况下，kmdo 会将二进制文件输出到 `dist/${BuildID}_${BuildTarget}` 目录
+    # （每个构建目标对应独立目录，避免冲突）
+    # 可通过 `binary` 属性在该目录下创建子目录
+    #
+    # 若需禁用此独立目录（直接输出到 dist 根目录），可设置为 true
+    # 注意：需自行确保不同构建目标不会覆盖彼此的文件
+    #
+    # 支持模板语法（<!-- md:inline_version v2.3 -->，kmdo v2.3 及以上版本支持）
+    no_unique_dist_dir: true
+
+    # 默认情况下，kmdo 会检查 main 路径下是否存在 main 函数
+    # 若需跳过此检查（如构建测试文件、库文件），可设置为 true
+    no_main_check: true
+
+    # 包含 Go 代码的项目（子）目录路径
+    # 此目录为 Go 构建命令的工作目录
+    # 注意：若该目录无 `go.mod` 文件，且使用 `gomod.proxy`，生成的二进制文件会无效
+    # 大多数场景下建议使用 `main` 属性而非此配置
+    #
+    # 默认值：'.'（项目根目录）
+    dir: go  # 示例：Go 代码存放在项目根目录的 go 子目录中
+
+    # 构建器（Builder）：指定不同的构建实现
+    # 有效值：`go`（默认）、`rust`（Rust 项目）、`zig`（Zig 项目）、`prebuilt`（预构建产物，仅专业版支持）
+    #
+    # 默认值：'go'
+    builder: prebuilt
+
+    # 覆盖配置（Overrides）：为特定目标（GOOS+GOARCH）覆盖部分构建字段
+    # 对 CGO 场景特别有用（不同平台可能需要不同编译器/标志）
+    #
+    # 注意：至少需设置 goos 和 goarch，否则无法匹配任何目标
+    overrides:
+      - goos: darwin
+        goarch: amd64
+        goamd64: v1
+        goarm: ""
+        goarm64: ""
+        gomips: ""
+        go386: ""
+        goriscv64: ""
+        goppc64: ""
+        ldflags:
+          - foo  # 示例：覆盖 darwin_amd64 目标的 ldflags
+        tags:
+          - bar  # 示例：覆盖 darwin_amd64 目标的 build tags
+        asmflags:
+          - foobar
+        gcflags:
+          - foobaz
+        env:
+          - CGO_ENABLED=1  # 示例：对 darwin_amd64 目标启用 CGO
+
+    # 指定构建时使用的 Go 二进制文件路径/名称（已废弃）
+    # 大多数场景下可忽略此配置
+    #
+    # 默认值："go"
+    # 支持模板语法
+    # 废弃说明：请使用 `tool` 属性替代
+    gobinary: "go1.13.4"
+```
+:::tip
+
+了解更多关于 [构建钩子](/zh-cn/guides/pkg/builds/hooks/) 的信息。
+
+***GOAMD64、GORISCV64、GOPPC64、GO386、GOARM、GOARM64 说明***
+
+在 `targets` 和 `overrides` 等配置项中，通常需要指定完整的目标标识，
+包括 `_{goamd64}` 后缀以及其他与 GOARCH 相关的参数后缀。
+
+:::
+
+:::note
+
+一级构建目标可通过执行以下命令获取：
+```sh
+go tool dist list -json | jq -r '.[] | select(.FirstClass) | [.GOOS, .GOARCH] | @tsv'
+```
+同时建议你阅读 Go 官方关于平台移植的文档：[Go 一级平台移植政策](https://go.dev/wiki/PortingPolicy#first-class-ports)。
+
+:::
+
+
+以下是多二进制文件构建的示例配置：
+
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - main: ./cmd/cli
+    id: "cli"
+    binary: cli
+    goos:
+      - linux
+      - darwin
+      - windows
+
+  - main: ./cmd/worker
+    id: "worker"
+    binary: worker
+    goos:
+      - linux
+      - darwin
+      - windows
+
+  - main: ./cmd/tracker
+    id: "tracker"
+    binary: tracker
+    goos:
+      - linux
+      - darwin
+      - windows
+```
+
+二进制文件名字段支持 [模板语法](/zh-cn/guides/pkg/general/#模版)。以下构建详情可通过模板调用：
+
+| 变量名（Key） | 描述（Description）                |
+| ------------- | --------------------------------- |
+| .Os           | `GOOS`（目标操作系统）            |
+| .Arch         | `GOARCH`（目标架构）              |
+| .Arm          | `GOARM`（ARM 版本）               |
+| .Ext          | 文件后缀（例如 `.exe`）           |
+| .Target       | 构建目标（例如 `darwin_amd64`）   |
+
+## Understanding `GOMAXPROCS` in Kmdo
+
+### Kmdo 的 `GOMAXPROCS` 配置
+
+Kmdo 集成了
+[`automaxprocs`](https://pkg.go.dev/go.uber.org/automaxprocs/maxprocs) 库，
+可根据可用 CPU 自动设置 `GOMAXPROCS`，同时支持识别容器的 CPU 限制。
+该配置决定了 Kmdo 内部使用的线程数量。
+
+Kmdo 还提供 `--parallelism` 标志，用于控制内部任务（如构建、归档、上传）的并发执行数量。
+若未指定 `--parallelism`，Kmdo 会默认使用当前 `GOMAXPROCS` 的值作为并发数。
+
+### `go build` 命令的 `GOMAXPROCS` 配置
+
+Kmdo 启动的每个 `go build` 命令都会继承当前环境变量，包括 `GOMAXPROCS`。
+若未显式设置 `GOMAXPROCS`，Go 会默认将其值设为**宿主机器**的 CPU 核心数。
+
+如果在容器环境中运行 Kmdo，且希望构建过程遵守容器的 CPU 限制，则必须手动设置 `GOMAXPROCS`。
+
+### 示例
+
+若希望 Kmdo 最多并行执行 10 个任务，同时限制 `go build` 仅使用 2 个线程：
+
+```sh
+GOMAXPROCS=2 kmdo pkg release --parallelism=10
+```
+
+该配置实现以下功能：
+
+- 配置 Kmdo 最多并发执行 10 个内部任务
+- 配置 `go build` 子进程仅使用 2 个操作系统线程
+
+## 向 ldflags 传递环境变量
+
+可通过在模板中使用 `{{ .Env.VARIABLE_NAME }}` 实现，例如：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - ldflags:
+   - -s -w -X "main.goversion={{.Env.GOVERSION}}"
+```
+
+然后运行:
+
+```sh
+GOVERSION=$(go version) kmdo pkg
+```
+
+## Go Modules
+如果使用 Go 1.11+ 并启用 Go Modules 或 vgo，Kmdo 运行时可能会尝试下载依赖。由于多个构建并行执行，这很可能导致失败。
+
+解决方法：执行 `kmdo pkg` 前运行 `go mod tidy`，或在 `.kmdopkg.yaml` 文件中添加[钩子](/zh-cn/guides/pkg/builds/hooks/)自动执行该操作：
+
+```yaml title=".kmdopkg.yaml"
+before:
+  hooks:
+    - go mod tidy
+# rest of the file...
+```
+## 可复现构建
+
+要使你的发布产物、校验和及签名具备可复现性，需对 Kmdo 的默认构建配置进行以下部分（或全部）修改：
+
+- 修改 `ldflags`：默认情况下，`main.Date` 会设为 Kmdo 的运行时间（`{{.Date}}`），你可将其改为 `{{.CommitDate}}`，或直接不传递该变量。
+- 修改 `mod_timestamp`：默认值为空字符串——即采用编译时间，改为 `{{.CommitTimestamp}}` 或某个固定值。
+- 若构建所在的目录结构不一致，需在 `flags` 中传递 `-trimpath` 参数。
+- 移除对 `time` 模板函数的使用：该函数每次调用都会返回新值，不具备确定性。
+
+## 关于 `dist` 目录内文件夹命名的说明
+
+默认情况下，Kmdo 会将二进制文件生成在
+`dist/${BuildID}_${BuildTarget}` 目录下，该目录针对构建矩阵中的每个构建目标都是唯一的。
+
+这些文件夹名称不保证在不同版本间保持一致。如果确实需要从 Kmdo 外部访问它们，可通过解析
+`dist/artifacts.json` 文件来稳定获取二进制文件的路径。
+
+你也可以设置 `builds.no_unique_dist_dir`（本文档前文已说明），但在此情况下，需自行负责避免文件名冲突。
+
+### 为何 `amd64` 构建产物会带有 `_v1` 后缀？
+
+Go 1.18 引入了 `GOAMD64` 选项，而 `v1` 是该选项的默认值。
+
+由于 Kmdo 支持为多个不同的 `GOAMD64` 目标构建产物，因此会添加该后缀以避免文件名冲突。`arm` 与 `GOARM`、`mips` 与 `GOMIPS` 等
+其他架构及对应选项的构建产物，也会采用相同的处理逻辑。
+
+## Go 的一级端口
+
+`targets` 选项可接受 `go_first_class` 作为特殊目标值，其会解析为 Go 维基中定义的一级端口列表。
+
+更多相关信息可参考：
+[https://go.dev/wiki/PortingPolicy#first-class-ports](https://go.dev/wiki/PortingPolicy#first-class-ports)
+
+## 构建共享库或静态库
+
+Kmdo 支持通过配置 [Go 构建模式](https://pkg.go.dev/cmd/go#hdr-Build_modes) 编译并发布 C 语言共享库或静态库。
+
+可在构建配置中通过 `buildmode` 字段进行设置，目前支持 `c-shared`（C 共享库）和 `c-archive`（C 静态库）。其他值会通过 `-buildmode` 标
+志直接应用到构建命令中，但 Kmdo 不会额外配置相关逻辑。
+
+Kmdo 会执行以下操作：
+
+- 为目标操作系统设置正确的文件后缀。
+- 将生成的头文件（`.h`）打包到发布包中。
+
+示例用法：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - id: "my-library"
+
+    # 配置 buildmode 标志以输出共享库
+    buildmode: "c-shared" # 若需静态库，可改为 "c-archive"
+```
+

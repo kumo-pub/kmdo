@@ -1,0 +1,70 @@
+---
+title: 校验和（Checksums）
+sidebar:
+  label: 校验和（Checksums）
+description: 'Releases 校验和（Checksums）.'
+i18nReady: true
+---
+
+## 校验和（Checksums）
+
+`Kmdo` 会生成一个 `project_1.0.0_checksums.txt` 文件，并随版本发布上传，以便用户验证下载的文件是否正确。
+
+checksum 部分可用于自定义校验文件的名称：
+
+```yaml title=".kmdopkg.yaml"
+checksum:
+  # 可自定义校验和文件名。
+  #
+  # 默认值: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'，或者当 split 为 true 时:
+  #   '{{ .ArtifactName }}.{{ .Algorithm }}'。
+  # 支持模板。
+  name_template: "{{ .ProjectName }}_checksums.txt"
+
+  # 使用的算法。
+  #
+  # 可选值:
+  # - sha256
+  # - sha512
+  # - sha1
+  # - crc32
+  # - md5
+  # - sha224
+  # - sha384
+  # - sha3-256
+  # - sha3-512
+  # - sha3-224
+  # - sha3-384
+  # - blake2s
+  # - blake2b
+  #
+  # 默认值: 'sha256'。
+  algorithm: sha256
+
+  # 是否为每个 artifact 单独生成校验文件。
+  split: true
+
+  # 需要包含在校验文件中的 artifact ID。
+  #
+  # 留空则默认包含所有发布的二进制文件、归档、Linux 包和源码归档。
+  ids:
+    - foo
+    - bar
+
+  # 禁用校验文件的生成/上传。
+  disable: true
+
+  # 可额外添加已有文件到校验文件中。
+  # 校验文件中使用的文件名为路径的最后部分（base）。
+  # 若存在同名文件，将使用最后找到的文件。
+  #
+  # 支持模板。
+  extra_files:
+    - glob: ./path/to/file.txt
+    - glob: ./glob/**/to/**/file/**/*
+    - glob: ./glob/foo/to/bar/file/foobar/override_from_previous
+    - glob: ./single_file.txt
+      name_template: file.txt # 注意此项仅在 glob 匹配单个文件时有效
+
+```
+

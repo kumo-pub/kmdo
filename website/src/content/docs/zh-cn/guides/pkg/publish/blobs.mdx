@@ -1,0 +1,164 @@
+---
+title: 对象存储
+sidebar:
+  label: 对象存储 (s3, gcs, azblob)
+description: 'Blobs (s3, gcs, azblob) configuration.'
+i18nReady: true
+---
+
+`blobs` 配置项支持将产物上传至 Amazon S3、Azure Blob（Azure 对象存储）和 Google GCS（Google 云存储）。
+
+## 自定义配置
+
+```yaml title=".kmdopkg.yaml"
+blobs:
+  # 支持配置多个对象存储上传规则
+  - # 云服务提供商名称：
+    # - s3：AWS S3 存储
+    # - azblob：Azure Blob 存储（Azure 对象存储）
+    # - gs：Google Cloud Storage（Google 云存储）
+    #
+    # 支持模板语法
+    provider: azblob
+
+    # 自定义终端节点（可选）
+    # 适用于 MinIO 等兼容 S3 协议的后端存储
+    #
+    # 启用后会自动开启 s3ForcePathStyle，且仅支持 provider 为 `s3` 时使用
+    #
+    # 支持模板语法
+    endpoint: https://minio.foo.bar
+
+    # 存储桶区域（可选）
+    # 仅支持 provider 为 `s3` 时使用
+    #
+    # 支持模板语法
+    region: us-west-1
+
+    # 禁用 SSL 加密（可选）
+    # 仅支持 provider 为 `s3` 时使用
+    disable_ssl: true
+
+    # 存储桶名称
+    #
+    # 支持模板语法
+    bucket: kmdo-bucket
+
+    # 需上传的产物 ID 列表
+    ids:
+      - foo
+      - bar
+
+    # 存储桶内的目标路径/名称
+    #
+    # 默认值：'{{ .ProjectName }}/{{ .Tag }}'（项目名称/标签版本）
+    # 支持模板语法
+    directory: "foo/bar/{{.Version}}"
+
+    # 是否禁用当前上传配置
+    #
+    # 支持模板语法
+    disable: '{{ ne .BLOB_UPLOAD_ONLY "foo" }}' # 当环境变量 BLOB_UPLOAD_ONLY 不等于 "foo" 时禁用
+
+    # 额外上传已存在的文件（可选）
+    # - 存储桶中的文件名将取路径的最后一部分（basename）
+    # - 若存在同名文件，后定义的会覆盖先定义的
+    # - 支持通配符和模板语法
+    extra_files:
+      - glob: ./path/to/file.txt  # 单个文件
+      - glob: ./glob/**/to/**/file/**/*  # 通配符匹配多个文件
+      - glob: ./glob/foo/to/bar/file/foobar/override_from_previous  # 覆盖同名文件
+      - glob: ./single_file.txt
+        name_template: file.txt  # 自定义文件名（仅当 glob 匹配单个文件时生效，支持模板语法）
+
+    # 启用/禁用 s3ForcePathStyle（仅 S3 兼容存储）
+    #
+    # 默认值：true
+    s3_force_path_style: false
+
+    # 应用于所有文件的访问控制列表（ACL）
+    #
+    # 若不同文件需配置不同 ACL，请创建多个 `blobs` 配置
+    #
+    # 仅支持 provider 为 S3 时使用
+    #
+    # 默认值：''（不设置）
+    acl: foo
+
+    # 缓存控制选项
+    #
+    # 若不同文件需配置不同缓存策略，请创建多个 `blobs` 配置
+    #
+    # 默认值：''（不设置）
+    cache_control:
+      - max-age=9999  # 缓存有效期 9999 秒
+      - public        # 允许公共缓存
+
+    # 文件的内容处置方式（Content-Disposition）
+    #
+    # 若不同文件需配置不同处置方式，请创建多个 `blobs` 配置
+    #
+    # 默认值：attachment;filename={{.Filename}}（以附件形式下载，文件名沿用原文件名）
+    # 支持模板语法
+    # 设置为 '-' 可禁用该配置
+    content_disposition: "inline"  # 在线预览文件（而非下载）
+
+    # 是否同时上传 metadata.json 和 artifacts.json 元数据文件
+    include_meta: true
+
+    # 仅上传 extra_files 中定义的文件
+    extra_files_only: true
+```
+
+
+## 身份认证
+
+kmdo 的对象存储上传管道（blob pipe）身份认证方式因云服务提供商而异，具体说明如下：
+
+### S3 提供商
+
+S3 提供商支持 AWS
+[默认凭证提供商链](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-credentials)，
+认证优先级如下：
+
+- 环境变量
+- 共享凭证文件
+- 若应用运行在 Amazon EC2 实例上，则使用 EC2 实例的 IAM 角色
+
+### Azure Blob 提供商
+
+```yaml
+blobs:
+  - provider: azblob
+    bucket: releases?storage_account=myazurestorage
+```
+
+存储账户可通过以下方式设置：
+- `bucket` 配置中携带 `storage_account` URL 参数
+- 环境变量 `AZURE_STORAGE_ACCOUNT`
+
+支持的身份认证方式：
+- [环境变量](https://docs.microsoft.com/en-us/azure/storage/common/storage-azure-cli#set-default-azure-storage-account-environment-variables)：
+  - `AZURE_STORAGE_KEY`（存储账户密钥）或 `AZURE_STORAGE_SAS_TOKEN`（共享访问签名令牌）
+- [Azure 默认凭证](https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication-service-principal)（适用于服务主体等场景）
+
+
+### [GCS 提供商](https://cloud.google.com/docs/authentication/production)
+
+GCS 提供商使用
+[应用默认凭证（Application Default Credentials）](https://cloud.google.com/docs/authentication/production)，
+认证优先级如下：
+
+- 环境变量（`GOOGLE_APPLICATION_CREDENTIALS`）
+- 计算实例的默认服务账号（适用于 Compute Engine、
+  Kubernetes Engine、Cloud Function 等场景）
+
+## 访问控制列表（ACLs）
+
+由于不同存储桶提供商的 ACL 设置方式无统一标准，[go-cloud][] 目前
+[暂不支持跨提供商的 ACL 统一配置][issue1108]。
+
+请根据所使用的提供商，在存储桶/目录等层级单独设置 ACL。
+
+[go-cloud]: https://gocloud.dev/howto/blob/
+[issue1108]: https://github.com/google/go-cloud/issues/1108

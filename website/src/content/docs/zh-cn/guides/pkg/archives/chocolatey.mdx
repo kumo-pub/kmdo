@@ -1,0 +1,135 @@
+---
+title: Chocolatey 包
+sidebar:
+  label: Chocolatey 包
+description: 'Chocolatey 包 Releases.'
+i18nReady: true
+---
+
+
+kmdo 还支持生成 `nupkg` 格式的包。
+[Chocolatey](http://chocolatey.org/) 是基于 `nupkg` 格式的包管理系统，
+可让您直接将项目发布到 Chocolatey 仓库。
+发布后，用户可在本地或 Windows 分发版中安装该包。
+
+更多详情可参考 [Chocolatey 官方文档](https://docs.chocolatey.org/)。
+
+可用配置选项：
+
+```yaml title=".kmdopkg.yaml"
+chocolateys:
+  - # 应用程序的包名称
+    # 名称不得包含空格或 URL 中无效的字符
+    # 若需分隔单词，建议使用 '-' 而非 '.'
+    #
+    # 默认值：项目名称
+    name: foo
+
+    # 要使用的归档文件 ID 列表
+    # 空列表表示使用所有 ID
+    # 注意：归档文件格式不得为 'binary'
+    ids:
+      - foo
+      - bar
+
+    # Chocolatey 包的源文件 URL
+    # 指向包的打包文件存储位置
+    package_source_url: https://github.com/foo/chocolatey-package
+
+    # 应用程序的所有者
+    # 通常为您本人或您的团队
+    owners: Drum Roll Inc
+
+    # 应用程序的标题
+    # 包的人性化友好名称
+    #
+    # 默认值：项目名称
+    title: Foo Bar
+
+    # 应用程序的作者（通常为您本人）
+    authors: Drummer
+
+    # 应用程序的项目 URL
+    # 此字段为必填项
+    project_url: https://example.com/
+
+    # 基于给定 Token（github、gitlab 或 gitea）生成的 URL
+    #
+    # 默认值：取决于 Git 远程仓库配置
+    # 支持模板语法
+    url_template: "https://example.org/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # 应用程序的图标 URL
+    icon_url: "https://example.org/icon.png"
+
+    # 应用程序的版权信息
+    #
+    # 支持模板语法
+    copyright: 2022 Drummer Roll Inc
+
+    # 应用程序的许可证信息 URL
+    license_url: https://github.com/foo/bar/blob/main/LICENSE
+
+    # 是否要求用户接受许可证
+    # 指定客户端在安装包前是否必须提示用户接受许可证
+    require_license_acceptance: false
+
+    # 应用程序的源代码 URL
+    project_source_url: https://github.com/foo/bar
+
+    # 应用程序的文档 URL
+    docs_url: https://github.com/foo/bar/blob/main/README.md
+
+    # 应用程序的问题跟踪 URL
+    bug_tracker_url: https://github.com/foo/barr/issues
+
+    # 应用程序的标签列表
+    tags: "foo bar baz"
+
+    # 应用程序的摘要
+    summary: 快速轻松创建鼓声滚动效果的软件
+
+    # Chocolatey 包的详细描述
+    # 支持 Markdown 语法
+    description: |
+      {{ .ProjectName }} 安装包。
+      一款可快速轻松创建鼓声滚动效果的软件。
+
+    # 应用程序的发行说明
+    # 描述当前版本包的变更内容
+    # 支持 Markdown 语法。为避免频繁更新此字段，
+    # 提供指向外部发行说明列表的 URL 也是完全可接受的
+    release_notes: "https://github.com/foo/bar/releases/tag/v{{ .Version }}"
+
+    # 应用程序的依赖项
+    # 版本号为可选字段
+    dependencies:
+      - id: nfpm
+        version: 2.20.0
+
+    # 用于推送到 Chocolatey 仓库的 API 密钥
+    #
+    # 警告：请勿在配置文件中暴露您的 API 密钥！
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+
+    # 用于推送包的源仓库地址
+    source_repo: "https://push.chocolatey.org/"
+
+    # 设置为 true 可阻止 kmdo 自动推送包到 Chocolatey 仓库
+    # 发布责任将由用户自行承担
+    skip_publish: true
+
+    # 当构建部分存在多个 amd64 版本时，指定要使用的版本
+    #
+    # 默认值：'v1'
+    goamd64: v1
+```
+
+:::tip[测试时请注意]
+
+    Chocolatey 包需要人工审核，因此请勿发布非最终版本的「测试用」包。
+:::
+
+:::note
+    kmdo 不会为您安装 `chocolatey`/`choco` 及其任何依赖项。
+:::

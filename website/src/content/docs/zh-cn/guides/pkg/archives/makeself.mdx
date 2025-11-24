@@ -1,0 +1,94 @@
+---
+title: 自解压归档（Self-Extracting Archives）
+sidebar:
+  label: 自解压归档（Self-Extracting Archives）
+description: '自解压归档（Self-Extracting Archives）.'
+i18nReady: true
+---
+
+
+
+Kmdo 可以使用 [Makeself](https://makeself.io/) 创建自解压归档。
+这些文件本身就是可执行程序，可以自我解压，并可能执行其中的二进制文件、进行安装或执行其他操作。
+
+这种方式特别适合需要让用户无需手动解压即可轻松安装的软件分发。
+通常支持 Linux、MacOS 以及 Makeself 支持的其他平台。
+
+:::note
+
+此功能要求系统中能使用 makeself 命令（即 makeself 在 $PATH 中可用）。
+你可以通过系统的软件包管理器安装，或者从 [Makeself 项目](https://makeself.io/) 获取。
+:::
+
+## 配置
+
+下面是一个带完整注释的 `makeselfs` 配置示例，包含所有可用字段：
+
+```yaml title=".kmdopkg.yaml"
+makeselfs:
+ makeselfs:
+  - id: my-installer                # Makeself 包的唯一 ID
+    ids:                            # 要打包的构建 ID（默认包含全部）
+      - my-binary
+
+    goos:                           # 支持生成的操作系统
+      - linux
+      - darwin
+    goarch:                         # 支持的架构
+      - arm64
+      - amd64
+
+    name: my-package                 # 包名称（支持模板）
+    description: foo bar             # 包描述（支持模板）
+    keywords:                        # 关键词列表
+      - release
+      - makeself
+    homepage: "https://example.com/" # 项目主页
+    license: MIT                      # 软件许可证
+    maintainer: "Foo Bar <foo at bar dot com>"  # 维护者/作者
+
+    filename: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.run"  
+    # 输出文件名模板，必须包含扩展名（通常是 .run）
+
+    compression: "gzip"               # 压缩格式，可选: gzip, bzip2, xz, lzo, compress, none
+    script: install.sh                # 安装脚本路径，运行归档时执行
+    extra_args:                       # 额外传给 Makeself 的命令行参数
+      - "--notemp"
+      - "--needroot"
+      - "--keep"
+      - "--copy"
+
+    files:                            # 额外要包含在归档中的文件/通配符
+      - LICENSE.txt
+      - README_{{.Os}}.md
+      - CHANGELOG.md
+      - configs/*
+      - scripts/*.sh
+      - src: "*.md"                    # 可以指定源和目标目录
+        dst: docs
+        strip_parent: true             # 是否去掉上层目录结构
+
+    disable: "{{ .Env.SKIP_MAKESELF }}" # 是否禁用此 Makeself 包（支持模板）
+
+```
+
+有关更多信息，请参考 Makeself [文档](https://makeself.io/)
+
+:::note
+
+安装脚本可以访问包中包含的所有文件，因此你可以在安装逻辑中引用文档、配置文件或其他资源。
+:::
+
+:::note["Root Privileges"]
+
+当在 `extra_args` 中使用 `--needroot` 时，`Makeself` 安装程序在执行时会自动提示获取 `root` 权限。
+这样你的安装脚本可以直接假设拥有 root 权限，无需使用 sudo 命令，使脚本更简单、更可靠。
+
+:::
+
+:::tip
+
+Makeself 包是平台特定的（通常是 Linux 和 macOS），生成可执行文件。
+请确保目标用户能够在其系统上执行这些文件。
+
+:::

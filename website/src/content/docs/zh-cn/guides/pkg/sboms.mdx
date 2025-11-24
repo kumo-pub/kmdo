@@ -1,0 +1,109 @@
+---
+title: 制品编目（Cataloging Artifacts）
+sidebar:
+  label: 制品编目（Cataloging Artifacts）
+description: '制品编目（Cataloging Artifacts）.'
+i18nReady: true
+---
+
+
+软件物料清单（SBOM，Software Bill of Materials）是对构成软件制品的所有组件的结构化描述文档。
+
+Kmdo 可为由其生成的任意制品创建一个或多个 SBOM 文件。
+
+## 使用方法（Usage）
+
+制品编目步骤会分析 Kmdo 生成的一个或多个制品，并在 `dist` 目录中输出一个或多个 SBOM 文件。
+
+默认配置会通过 [Syft](https://github.com/anchore/syft) 工具，为每个生成的归档文件（archive）创建对应的 SBOM。
+
+如需自定义制品编目流程，可使用以下配置选项：
+
+```yaml title=".kmdopkg.yaml"
+sboms:
+  - # SBOM 配置的唯一标识 ID（必须唯一，用于区分多个 SBOM 配置）
+    #
+    # 默认值：'default'
+    id: foo
+
+    # 此步骤生成的 SBOM 文档名称列表（路径相对于 dist 目录）
+    #
+    # 配置的每个元素都会作为变量供模板引用。例如：
+    #   documents: ["foo", "bar"]
+    #
+    # 会生成以下可通过模板键引用的变量：
+    #   document0: "foo" （第一个文档名称）
+    #   document1: "bar" （第二个文档名称）
+    #
+    # 注意：仅当 "artifacts" 字段值为 "any" 时，才允许配置多个 SBOM 文档名称
+    #
+    # 默认值：
+    #   当 artifacts 为 "binary" 时：["{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.json"]
+    #   当 artifacts 为 "any" 时：[]（空列表）
+    #   其他情况：["{{ .ArtifactName }}.sbom.json"]
+    # 支持模板语法
+    documents:
+      - "${artifact}.spdx.json"  # 示例：生成格式为「制品名.spdx.json」的 SBOM 文件
+
+    # SBOM 生成工具的命令路径（可指定绝对路径或系统环境变量中的命令）
+    #
+    # 注意：命令执行时的工作目录（CWD）会被设置为 dist 目录
+    #
+    # 默认值：'syft'（使用系统环境变量中配置的 Syft 工具）
+    cmd: syft
+
+    # 传递给 SBOM 生成工具的命令行参数
+    #
+    # 默认值：["$artifact", "--output", "spdx-json=$document", "--enrich", "all"]
+    # （含义：分析目标制品 $artifact，输出 SPDX 格式 JSON 文件到 $document，启用所有增强信息）
+    # 支持模板语法
+    args: ["$artifact", "--output", "cyclonedx-json=$document"]  # 示例：输出 CycloneDX 格式的 SBOM
+
+    # 传递给 SBOM 命令及模板的环境变量列表
+    #
+    # 默认值：[ "SYFT_FILE_METADATA_CATALOGER_ENABLED=true" ]
+    # （含义：启用 Syft 的文件元数据编目功能）
+    env:
+      - FOO=bar
+      - HONK=honkhonk  # 示例：自定义环境变量
+
+    # 要编目的制品类型（指定需生成 SBOM 的产物类别）
+    #
+    # 有效值说明：
+    # - any:        由 SBOM 工具自动识别工作目录中可用的制品并编目
+    # - source:     源代码归档文件（如源码压缩包）
+    # - package:    Linux 系统包（deb、rpm、apk 等格式）
+    # - installer:  Windows MSI 安装程序（仅专业版 Pro 支持）
+    # - diskimage:  macOS DMG 磁盘镜像（仅专业版 Pro 支持）
+    # - archive:    来自 archive 流程的归档文件（如二进制压缩包）
+    # - binary:     构建阶段输出的二进制可执行文件
+    #
+    # 默认值：'archive'
+    artifacts: archive
+
+    # 要编目的制品 ID 列表（指定具体哪个制品需要生成 SBOM）
+    #
+    # 注意：若 `artifacts` 字段值为 "source" 或 "any"，则此配置无效
+    ids:
+      - foo
+      - bar  # 示例：仅为 ID 为 foo、bar 的制品生成 SBOM
+
+    # 是否禁用当前 SBOM 配置
+    #
+    # 默认值：'true'（默认禁用，需手动设为 false 启用）
+    # 支持模板语法
+    disable: true
+```
+
+### 可用变量名称（Available variable names）
+
+以下环境变量可在支持模板语法的字段中使用：
+
+- `${artifact}`：待编目制品的路径（除非 "artifacts" 配置项设为 "any"，否则生效）
+- `${artifactID}`：待编目制品的 ID（除非 "artifacts" 配置项设为 "any"，否则生效）
+- `${document}`：生成的 SBOM 文件名（若 "artifacts" 配置项为 "any"，则等同于 `${document0}`）
+- `${document#}`：生成的多个 SBOM 文件名，其中 `#` 对应 "documents" 配置项中的列表索引（例如 `${document0}`）
+
+## 限制条件（Limitations）
+
+Kmdo 生成的容器镜像暂不支持被 SBOM 工具编目。

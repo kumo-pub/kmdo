@@ -1,0 +1,220 @@
+---
+title: Krew Plugin Manifests
+sidebar:
+  label: Krew Plugin Manifests
+description: 'Krew Plugin Manifests configuration.'
+i18nReady: true
+---
+
+After releasing to GitHub or GitLab, kmdo can generate and publish a _Krew
+Plugin Manifest_ into a repository that you have access to.
+
+Check their [website](https://krew.sigs.k8s.io) for more information.
+
+## Options
+
+The `krews` section specifies how the plugins should be created:
+
+```yaml title=".kmdopkg.yaml"
+krews:
+  -
+    # Name of the recipe
+    #
+    # Default: the project name.
+    # Templates: allowed.
+    name: myproject
+
+    # IDs of the archives to use.
+    ids:
+    - foo
+    - bar
+
+    # GOARM to specify which 32-bit arm version to use if there are multiple
+    # versions from the build section. Krew plugin supports at this moment only
+    # one 32-bit version.
+    #
+    # Default: 6.
+    goarm: 6
+
+    # GOAMD64 to specify which amd64 version to use if there are multiple
+    # versions from the build section.
+    #
+    # Default: 'v1'.
+    goamd64: v3
+
+    # NOTE: make sure the url_template, the token and given repo (github or
+    # gitlab) owner and name are from the same kind. We will probably unify this
+    # in the next major version like it is done with scoop.
+
+    # URL which is determined by the given Token (github or
+    # gitlab)
+    # Default:
+    #   GitHub: 'https://github.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
+    #   GitLab: 'https://gitlab.com/<repo_owner>/<repo_name>/-/releases/{{ .Tag }}/downloads/{{ .ArtifactName }}'
+    #   Gitea: 'https://gitea.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
+    # Templates: allowed.
+    url_template: "http://github.mycompany.com/foo/bar/releases/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # The project name and current git tag are used in the format string.
+    commit_msg_template: "Krew plugin update for {{ .ProjectName }} version {{ .Tag }}"
+
+    # Your app's homepage.
+    #
+    # Default: inferred from global metadata.
+    homepage: "https://example.com/"
+
+    # Your app's description.
+    # The usual guideline for this is to wrap the line at 80 chars.
+    #
+    # Templates: allowed.
+    # Default: inferred from global metadata.
+    description: "Software to create fast and easy drum rolls."
+
+    # Your app's short description.
+    # The usual guideline for this is to be at most 50 chars long.
+    #
+    # Templates: allowed.
+    # Default: inferred from global metadata.
+    short_description: "Software to create fast and easy drum rolls."
+
+    # Caveats for the user of your binary.
+    # The usual guideline for this is to wrap the line at 80 chars.
+    caveats: "How to use this binary"
+
+    # Setting this will prevent kmdo to actually try to commit the updated
+    # krew plugin - instead, the plugin file will be stored on the dist directory
+    # only, leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the Krew plugin
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    skip_upload: true
+
+    # Repository to push the generated files to.
+    repository:
+      # Repository owner.
+      #
+      # Templates: allowed.
+      owner: caarlos0
+
+      # Repository name.
+      #
+      # Templates: allowed.
+      name: my-repo
+
+      # Optionally a branch can be provided.
+      #
+      # Default: default repository branch.
+      # Templates: allowed.
+      branch: main
+
+      # Optionally a token can be provided, if it differs from the token
+      # provided to kmdo
+      #
+      # Templates: allowed.
+      token: "{{ .Env.GITHUB_PERSONAL_AUTH_TOKEN }}"
+
+      # Sets up pull request creation instead of just pushing to the given branch.
+      # Make sure the 'branch' property is different from base before enabling
+      # it.
+      #
+      # This might require a personal access token.
+      pull_request:
+        # Whether to enable it or not.
+        enabled: true
+
+        # Whether to open the PR as a draft or not.
+        draft: true
+
+        # Allows to set a body for the pull request.
+        # If the repository has a pull request template, it will be appended to
+        # this.
+        #
+        # <!-- md:inline_version v2.12 -->.
+        body: |
+          cc/ @foobar
+
+        # Base can also be another repository, in which case the owner and name
+        # above will be used as HEAD, allowing cross-repository pull requests.
+        base:
+          owner: kumose
+          name: my-repo
+          branch: main
+
+      # Clone, create the file, commit and push, to a regular Git repository.
+      #
+      # Notice that this will only have any effect if the given URL is not
+      # empty.
+      git:
+        # The Git URL to push.
+        #
+        # Templates: allowed.
+        url: 'ssh://git@myserver.com:repo.git'
+
+        # The SSH private key that should be used to commit to the Git
+        # repository.
+        # This can either be a path or the key contents.
+        #
+        # IMPORTANT: the key must not be password-protected.
+        #
+        # WARNING: do not expose your private key in the configuration file!
+```
+
+
+## Limitations
+
+- Only one binary per archive is allowed;
+- Binary releases (when `archives.format` is set to `binary`) are not allowed;
+- Only one `GOARM` build is allowed;
+
+
+## Pull Requests
+
+kmdo allows you to, instead of pushing directly to the main branch, push
+to a feature branch, and open a pull requests with the changes.
+
+### Templates
+
+kmdo will check for a `.github/PULL_REQUEST_TEMPLATE.md`, and set it in
+the pull request body if it exists.
+
+We do that to prevent extra work for maintainers of things like `winget-pkgs`,
+`nixpkgs`, and so on.
+
+### Cross-repository pull requests
+
+You can also push to a fork, and open the pull request in the original branch.
+
+Here's an example on how to set it up:
+
+```yaml title=".kmdopkg.yaml"
+# ...
+something: # can be nix, brews, etc...
+  - repository:
+      owner: john
+      name: repo
+      branch: "{{.ProjectName}}-{{.Version}}"
+      pull_request:
+        enabled: true
+        base:
+          owner: mike
+          name: repo
+          branch: main
+```
+
+This will:
+
+- Try to sync the `john/repo` fork with `mike/repo:main` (if on GitHub).
+- Create the files into `john/repo`, in the branch `foo-1.2.3` (assuming
+  `ProjectName=foo` and `Version=1.2.3`). [^head]
+- Open a pull request from `john/repo` into `mike/repo`, with the branch `main`
+  as target. [^base]
+
+[^head]: In GitHub's terms, this means `head=john:repo:foo-1.2.3`
+
+[^base]: In GitHub's terms, this means `base=mike:repo:main`
+
+### Things that don't work
+
+- Opening pull requests to a forked repository (`go-github` does not have the
+  required fields to do it).
+- Since this can fail for a myriad of reasons, if an error happen, it'll log it
+  to the release output, but will not fail the pipeline.

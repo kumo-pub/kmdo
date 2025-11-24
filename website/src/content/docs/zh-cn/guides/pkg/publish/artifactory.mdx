@@ -1,0 +1,220 @@
+---
+title: Artifactory 仓库
+sidebar:
+  label: Artifactory 仓库
+description: 'Artifactory configuration.'
+i18nReady: true
+---
+
+
+将产物发布至 Artifactory 实例。
+
+## 工作原理
+
+你可以声明多个 Artifactory 实例。
+`builds` 配置段生成的所有二进制产物，都会被推送到每个已配置的 Artifactory 实例中。
+
+若你仅需使用一个 Artifactory 实例，
+配置流程十分简便：只需在 `.kmdopkg.yaml` 文件中添加上传目标地址和用户名即可：
+
+```yaml
+artifactories:
+  - name: production
+    target: http://<Your-Instance>:8081/artifactory/example-repo-local/{{ .ProjectName }}/{{ .Version }}/
+    username: kmdo
+```
+
+前置条件：
+
+- 已运行的 Artifactory 实例
+- 具备产物上传权限的用户（需提供密码/客户端 X509 证书/API 密钥）
+
+### 上传目标（Target）
+
+`target` 指产物的上传地址 URL（**不含**产物名称）。
+
+以下是 `kmdo` 上传模式为 `binary` 时，包含 `target` 的示例配置：
+
+```yaml
+- mode: binary
+  target: "http://artifacts.company.com:8081/artifactory/example-repo-local/{{ .ProjectName }}/{{ .Version }}/{{ .Os }}/{{ .Arch }}{{ if .Arm }}{{ .Arm }}{{ end }}"
+```
+
+最终部署地址示例：
+`http://artifacts.company.com:8081/artifactory/example-repo-local/kmdo/1.0.0/Darwin/x86_64/kmdo`
+
+支持的变量：
+
+- `Version`
+- `Tag`
+- `ProjectName`
+- `Os`
+- `Arch`
+- `Arm`
+
+:::note
+
+    变量 _Os_、_Arch_ 和 _Arm_ 仅在上传模式为 `binary` 时支持。
+:::
+
+### 用户名（Username）
+
+你配置的用户名需通过 Artifactory 的身份验证。
+
+用户名可按上述示例直接配置在文件中，也可从环境变量中读取。Artifactory 实例的配置名称将用于构建环境变量名，以此支持多实例的身
+份验证（这意味着每个 kmdo 配置中，各实例的 `name` 必须唯一）。
+
+环境变量的命名格式为 `ARTIFACTORY_实例名称_USERNAME`：
+- 若实例名称为 `production`，则用户名可存储在环境变量 `ARTIFACTORY_PRODUCTION_USERNAME` 中（实例名称会自动转为大写）。
+
+若配置文件中已指定用户名，则不会读取对应的环境变量。
+
+### 密码 / API 密钥（Password / API Key）
+
+密码或 API 密钥需存储在环境变量中，环境变量名基于 Artifactory 实例的配置名称构建，以此支持多实例的身份验证（这意味着每个 kmdo 配置中，各实例的 `name` 必须唯一）。
+
+环境变量的命名格式为 `ARTIFACTORY_实例名称_SECRET`：
+- 若实例名称为 `production`，则需将密钥存储在环境变量 `ARTIFACTORY_PRODUCTION_SECRET` 中（实例名称会自动转为大写）。
+
+### 基于 X509 证书的客户端授权（mTLS / 双向 TLS）
+
+若你的 Artifactory 服务器支持通过 mTLS（客户端证书）进行授权，可通过指定 PEM 编码的 X509 证书/密钥对文件路径来提供客户端凭证。
+
+```yaml
+artifactories:
+  - name: production
+    target: http://<Your-Instance>:8081/artifactory/example-repo-local/{{ .ProjectName }}/{{ .Version }}/
+    client_x509_cert: path/to/client.cert.pem
+    client_x509_key: path/to/client.key.pem
+```
+
+在 TLS 握手过程中会自动提供该客户端证书，Artifactory 服务器可通过该证书对你进行身份验证并授予上传权限。
+
+### 服务器认证
+
+可通过在配置中添加受信任的 X.509 证书链，对 Artifactory TLS 服务器进行认证。
+
+该受信任证书链将用于验证服务器证书的有效性。
+
+可在 Artifactory 配置段中通过 `trusted_certificates` 字段设置受信任证书链，采用 YAML 字面量块格式填写 PEM 编码的证书内容，示例如下：
+
+```yaml
+puts:
+  - name: "some artifactory server with a private TLS certificate"
+    #...(other settings)...
+    trusted_certificates: |
+      -----BEGIN CERTIFICATE-----
+      MIIDrjCCApagAwIBAgIIShr2zchZo+8wDQYJKoZIhvcNAQENBQAwNTEXMBUGA1UE
+      ...(edited content)...
+      TyzMJasj5BPZrmKjJb6O/tOtEIJ66xPSBTxPShkEYHnB7A==
+      -----END CERTIFICATE-----
+      -----BEGIN CERTIFICATE-----
+      MIIDrjCCApagAwIBAgIIShr2zchZo+8wDQYJKoZIhvcNAQENBQAwNTEXMBUGA1UE
+      ...(edited content)...
+      TyzMJasj5BPZrmKjJb6O/tOtEIJ66xPSBTxPShkEYHnB7A==
+      -----END CERTIFICATE-----
+```
+
+### 客户端校验和头部（Client Checksum Headers）
+
+Artifactory 默认校验和策略要求客户端为所有上传的产物提供[校验和头部](https://jfrog.com/help/r/what-are-client-checksum-server-checksum-and-checksum-policy-in-local-repositories)。
+当客户端上传文件时附带校验和头部，Artifactory 会计算文件的校验和，并与客户端提供的值进行比对。
+
+可通过 `custom_headers` 字段在上传配置中添加校验和头部：
+
+```yaml
+artifactories:
+  - name: production
+    target: http://<Your-Instance>:8081/artifactory/example-repo-local/{{ .ProjectName }}/{{ .Version }}/
+    custom_headers:
+      X-Checksum-MD5: "{{ md5 .ArtifactPath }}"
+      X-Checksum-SHA1: "{{ sha1 .ArtifactPath }}"
+      X-Checksum-SHA256: "{{ sha256 .ArtifactPath }}"
+```
+
+## 自定义配置
+
+当然，你可以对多项配置进行自定义：
+
+```yaml title=".kmdopkg.yaml"
+artifactories:
+  # 支持配置多个 Artifactory 实例
+  - # Artifactory 实例的唯一名称（用于标识实例）
+    name: production
+
+    # 需上传的产物 ID 列表
+    ids:
+      - foo
+      - bar
+
+    # 产物文件扩展名过滤（可选）
+    # 适用于同一 ID 对应多个不同扩展名产物的场景，可将不同扩展名产物上传至不同位置（如 nFPM 打包的产物）
+    exts:
+      - deb
+      - rpm
+
+    # 上传模式，有效值：`binary`（二进制模式）、`archive`（归档模式）
+    # - 若为 `archive` 模式：目标地址中不支持 _Os_、_Arch_、_Arm 变量（变量值为空）
+    # - 若为 `binary` 模式：需同时在 archives 配置段中设置 format 为 "binary"
+    # 默认值：'archive'
+    mode: archive
+
+    # Artifactory 实例 URL + 产物部署路径
+    target: http://artifacts.company.com:8081/artifactory/example-repo-local/{{ .ProjectName }}/{{ .Version }}/
+
+    # 禁用自动在目标 URL 后拼接产物名称（需手动在 target 中指定完整产物路径）
+    custom_artifact_name: true
+
+    # 基础认证用户名（可选）
+    # 支持模板语法（v2.12 及以上版本）
+    username: deployuser
+
+    # 基础认证密码（可选）
+    # 支持模板语法（v2.12 及以上版本）
+    password: '{{ readFile "~/.config/foo" }}'
+
+    # 客户端 X509 证书和密钥（提供后将用于 TLS 连接的客户端认证）
+    client_x509_cert: /path/to/client.cert.pem
+    client_x509_key: /path/to/client.key.pem
+
+    # 自定义请求头（如支持客户端校验和的头部配置）
+    custom_headers:
+      X-Checksum-MD5: "{{ md5 .ArtifactPath }}"    # 基于产物路径计算 MD5 校验和
+      X-Checksum-SHA1: "{{ sha1 .ArtifactPath }}"  # 基于产物路径计算 SHA1 校验和
+      X-Checksum-SHA256: "{{ sha256 .ArtifactPath }}"  # 基于产物路径计算 SHA256 校验和
+
+    # 是否上传校验和文件
+    checksum: true
+
+    # 是否上传 metadata.json 和 artifacts.json 元数据文件
+    meta: true
+
+    # 是否上传产物签名文件
+    signature: true
+
+    # 是否跳过当前上传配置（可选）
+    # 支持模板语法（v2.7 及以上版本），示例：当 Patch 版本号大于 0 时跳过
+    skip: "{{gt .Patch 0}}"
+
+    # 用于验证服务器证书的受信任证书链（PEM 编码）
+    trusted_certificates: |
+      -----BEGIN CERTIFICATE-----
+      MIIDrjCCApagAwIBAgIIShr2zchZo+8wDQYJKoZIhvcNAQENBQAwNTEXMBUGA1UE
+      ...(编辑后的证书内容)...
+      TyzMJasj5BPZrmKjJb6O/tOtEIJ66xPSBTxPShkEYHnB7A==
+      -----END CERTIFICATE-----
+
+    # 额外上传已存在的文件（可选，v2.1 及以上版本）
+    # - 产物名称默认取文件路径的最后一部分（basename）
+    # - 若存在同名文件，后定义的会覆盖先定义的
+    # - 支持通配符和模板语法
+    extra_files:
+      - glob: ./path/to/file.txt  # 单个文件
+      - glob: ./glob/**/to/**/file/**/*  # 通配符匹配多个文件
+      - glob: ./glob/foo/to/bar/file/foobar/override_from_previous  # 覆盖同名文件
+      - glob: ./single_file.txt
+        name_template: file.txt  # 自定义产物名称（仅当 glob 匹配单个文件时生效，支持模板语法）
+
+    # 仅上传 extra_files 中定义的文件（v2.1 及以上版本）
+    extra_files_only: true
+```

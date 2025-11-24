@@ -1,0 +1,33 @@
+---
+title: 关闭里程碑
+sidebar:
+  label: 关闭里程碑
+description: 'Closing Milestones configuration.'
+i18nReady: true
+---
+
+kmdo 可在所有产物成功发布后关闭代码仓库的里程碑。
+
+以下是 `milestones` 章节的可自定义配置项：
+
+```yaml title=".kmdopkg.yaml"
+milestones:
+  # 支持配置多个里程碑规则
+  - # 里程碑所属的代码仓库
+    #
+    # 默认值：从 origin 远程仓库 URL 中提取
+    repo:
+      owner: 用户（仓库所有者）
+      name: 仓库名
+
+    # 是否关闭里程碑
+    close: true
+
+    # 若出现错误（如里程碑不存在），是否终止发布流程
+    fail_on_error: true
+
+    # 里程碑名称
+    #
+    # 默认值：'{{ .Tag }}'（使用发布标签作为里程碑名称）
+    name_template: "当前发布"
+```

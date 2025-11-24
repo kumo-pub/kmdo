@@ -1,0 +1,190 @@
+---
+title: SCM
+sidebar:
+  label: SCM
+description: 'SCM configuration.'
+i18nReady: true
+---
+
+## GitHub
+
+### API Token
+
+kmdo requires an API token with the `repo` scope selected to deploy the
+artifacts to GitHub. You can create one
+[here](https://github.com/settings/tokens/new).
+
+This token should be added to the environment variables as `GITHUB_TOKEN`.
+
+Alternatively, you can provide the GitHub token in a file. kmdo will check
+`~/.config/kmdo/github_token` by default, but you can change that in the
+`.kmdopkg.yaml` file:
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  github_token: ~/.path/to/my/github_token
+```
+
+Note that the environment variable will be used if available, regardless of the
+`github_token` file.
+
+### GitHub Enterprise
+
+You can use kmdo with GitHub Enterprise by providing its URLs in the
+`.kmdopkg.yaml` configuration file. This takes a normal string, or a template
+value.
+
+```yaml title=".kmdopkg.yaml"
+github_urls:
+  api: https://git.company.com/api/v3/
+  upload: https://git.company.com/api/uploads/
+  download: https://git.company.com/
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+```
+
+If none are set, they default to GitHub's public URLs.
+
+
+## GitLab
+
+### API Token
+
+kmdo requires an API token with the `api` scope selected to deploy the artifacts to GitLab.
+That token can either be a Personal, or a Project one.
+
+This token should be added to the environment variables as `GITLAB_TOKEN`.
+
+Alternatively, you can provide the GitLab token in a file.
+kmdo will check `~/.config/kmdo/gitlab_token` by default, but you can change that in the `.kmdopkg.yaml` file:
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  gitlab_token: ~/.path/to/my/gitlab_token
+```
+
+:::tip
+
+    If you use a project access token, make sure to set `use_package_registry`
+    to `true` as well, otherwise it might not work.
+
+
+    If you are using a [protected variable](https://docs.gitlab.com/ee/ci/variables/#protected-cicd-variables)
+    to store any of the values needed by kmdo, ensure that you are protecting the tags as CI jobs in
+    Gitlab only may access protected variables if the job is run for protected refs
+    ([branches](https://docs.gitlab.com/ee/user/project/protected_branches.html),
+    [tags](https://docs.gitlab.com/ee/user/project/protected_tags.html)).
+:::
+
+### GitLab Enterprise or private hosted
+
+You can use kmdo with GitLab Enterprise by providing its URLs in the
+`.kmdopkg.yml` configuration file. This takes a normal string, or a template value.
+
+```yaml title=".kmdopkg.yaml"
+gitlab_urls:
+  api: https://gitlab.mycompany.com/api/v4/
+  download: https://gitlab.company.com
+
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+
+  # set to true if you want to upload to the Package Registry rather than attachments
+  # Only works with GitLab 13.5+
+  use_package_registry: false
+
+  # Set this if you set GITLAB_TOKEN to the value of CI_JOB_TOKEN.
+  use_job_token: true
+```
+
+If none are set, they default to GitLab's public URLs.
+
+:::note
+
+    Releasing to a private-hosted GitLab CE will only work for version `v12.9+`, due to dependencies
+    on [release](https://docs.gitlab.com/ee/user/project/releases/index.html) functionality
+    and [direct asset linking](https://docs.gitlab.com/ee/user/project/releases/index.html#permanent-links-to-release-assets).
+:::
+
+### Generic Package Registry
+
+GitLab introduced the [Generic Package Registry](https://docs.gitlab.com/ee/user/packages/package_registry/index.html) in Gitlab 13.5.
+
+Normally, `kmdo` uploads release files as "attachments", which may have [administrative limits](https://docs.gitlab.com/ee/administration/settings/account_and_limit_settings.html).
+Notably, hosted GitLab instances have a 10MB attachment limit, which cannot be changed.
+
+Uploading to the Generic Package Registry does not have this restriction.
+To use it instead, set `use_package_registry` to `true`.
+
+```yaml title=".kmdopkg.yaml"
+gitlab_urls:
+  use_package_registry: true
+```
+
+
+# Gitea
+
+## API Token
+
+kmdo requires an API token to deploy the artifacts to Gitea.
+You can create one in `Settings | Applications | Generate New Token` page of your Gitea instance.
+
+This token should be added to the environment variables as `GITEA_TOKEN`.
+
+Alternatively, you can provide the Gitea token in a file.
+kmdp will check `~/.config/kmdp/gitea_token` by default, but you can change that in the `.kmdopkg.yaml` file:
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  gitea_token: ~/.path/to/my/gitea_token
+```
+
+Note that the environment variable will be used if available, regardless of the
+`gitea_token` file.
+
+## URLs
+
+You can use kmdo with Gitea by providing its URLs in
+the `.kmdopkg.yaml` configuration file. This takes a normal string, or a template value.
+
+```yaml title=".kmdopkg.yaml"
+gitea_urls:
+  api: https://gitea.myinstance.com/api/v1
+  download: https://gitea.myinstance.com
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+```
+
+
+# Kmup
+
+## API Token
+
+kmdo requires an API token to deploy the artifacts to Kmup.
+You can create one in `Settings | Applications | Generate New Token` page of your Kmup instance.
+
+This token should be added to the environment variables as `KMUP_TOKEN`.
+
+Alternatively, you can provide the Kmup token in a file.
+kmdp will check `~/.config/kmdp/kmup_token` by default, but you can change that in the `.kmdopkg.yaml` file:
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  kmup_token: ~/.path/to/my/kmup_token
+```
+
+Note that the environment variable will be used if available, regardless of the
+`kmup_token` file.
+
+## URLs
+
+You can use kmdo with Kmup by providing its URLs in
+the `.kmdopkg.yaml` configuration file. This takes a normal string, or a template value.
+
+```yaml title=".kmdopkg.yaml"
+kmup_urls:
+  api: https://localhost:3326/api/v1
+  download: https://localhost:3326/
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+```

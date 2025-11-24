@@ -1,0 +1,256 @@
+---
+title: Docker
+sidebar:
+  label: Docker
+description: 'Docker Packages Releases.'
+i18nReady: true
+---
+
+
+:::tip[alpha ]
+
+    此功能目前处于 *alpha*（内测）阶段。
+    我们将持续优化直至其达到稳定状态，届时将正式弃用 `dockers` 和 `docker_manifests` 配置，
+    为 Kmdo v3 版本做准备——该版本将整合上述两个配置的全部功能。
+:::
+
+此功能使用 `docker buildx` 构建多架构清单，
+并复用先前构建的二进制文件和/或包。
+
+### 自定义配置
+
+以下是带注释的配置示例：
+
+```yaml title=".kmdopkg.yaml"
+dockers_v2:
+  # 可配置多个 Docker 镜像
+  - #
+    # 镜像的唯一标识符（ID）
+    # 后续如需过滤镜像（如自定义发布器场景）时需用到
+    # 默认值：项目名称
+    id: myimg
+
+    # Dockerfile 路径（相对于项目根目录）
+    #
+    # 默认值：'Dockerfile'
+    # 支持模板语法
+    dockerfile: "{{ .Env.DOCKERFILE }}"
+
+    # 用于过滤二进制文件/包的 ID 列表
+    #
+    # 请确保仅包含您要在 Dockerfile 中通过 `COPY` 指令引入的二进制文件 ID
+    #
+    # 若包含不存在或当前构建架构不支持的 ID，镜像构建将被跳过
+    ids:
+      - mybuild
+      - mynfpm
+
+    # 镜像名称列表
+    #
+    # 空镜像名将被忽略
+    # 支持模板语法
+    images:
+      - "myuser/myimage"
+      - "gcr.io/myuser/myimage"
+
+    # 标签名称列表
+    #
+    # 空标签将被忽略
+    # 支持模板语法
+    tags:
+      - "v{{ .Version }}"
+      - "{{ if .IsNightly }}nightly{{ end }}"
+      - "{{ if not .IsNightly }}latest{{ end }}"
+
+    # 若您的 Dockerfile 需复制二进制文件和包之外的其他文件，
+    # 请在此处列出这些文件
+    # 注意：kmdo 会在临时目录中创建相同的文件结构，因此若您在此添加 `foo/bar.json`，
+    # 可在 Dockerfile 中通过 `COPY foo/bar.json /whatever.json` 引入
+    # 另请注意：此处路径相对于 kmdo 的运行目录（通常为仓库根目录）
+    # 此字段不支持通配符，但您可在此添加整个目录，
+    # 并在 Dockerfile 中使用 `COPY`/`ADD` 时搭配通配符
+    extra_files:
+      - config.yml
+
+    # 要添加到镜像的标签（Labels）
+    #
+    # 键或值为空的项将被忽略
+    # 支持模板语法
+    labels:
+      "org.opencontainers.image.description": "My software"  # 镜像描述（保持原文，可按需改为中文）
+      "org.opencontainers.image.created": "{{.Date}}"        # 镜像创建时间（模板变量，保留原文）
+      "org.opencontainers.image.name": "{{.ProjectName}}"    # 项目名称（模板变量，保留原文）
+      "org.opencontainers.image.revision": "{{.FullCommit}}" # 完整提交哈希（模板变量，保留原文）
+      "org.opencontainers.image.version": "{{.Version}}"     # 版本号（模板变量，保留原文）
+      "org.opencontainers.image.source": "{{.GitURL}}"       # 代码仓库地址（模板变量，保留原文）
+
+    # 要添加到镜像的注解（Annotations）
+    #
+    # 键或值为空的项将被忽略
+    # 支持模板语法
+    annotations:
+      "foo": "bar"
+      "project": "{{.ProjectName}}"
+
+    # 要构建的目标平台列表
+    #
+    # 默认值：[ linux/amd64 linux/arm64 ]
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+    # 是否禁用当前 Docker 配置
+    #
+    # 支持模板语法
+    # <!-- md:inline_version v2.12.7-unreleased -->（版本说明，保留原文）
+    disable: "{{ .IsSnapshot }}"
+
+    # 是否为镜像创建并附加 SBOM（软件物料清单）
+    #
+    # 默认值：'true'
+    # 支持模板语法
+    # <!-- md:inline_version v2.12.7-unreleased -->（版本说明，保留原文）
+    sbom: "{{ not .IsNightly }}"
+
+    # 要传递给构建命令的额外 `--build-arg` 参数
+    #
+    # 支持模板语法
+    build_args:
+      FOO: bar
+
+    # 要传递给构建命令的自定义标志
+    #
+    # 注意：使用此配置需自行承担风险
+    # 注意：标志需在名称和值之间使用 `=` 连接
+    #
+    # 支持模板语法
+    flags:
+      - "--ulimit=10"
+
+    # 重试配置
+    retry:
+      # 重试尝试次数
+      #
+      # 默认值：10
+      attempts: 5
+
+      # 重试间隔时间
+      #
+      # 默认值：10s（10秒）
+      delay: 5s
+
+      # 最大重试间隔时间
+      #
+      # 默认值：5m（5分钟）
+      max_delay: 2m
+```
+
+:::note [dockers_v2]
+
+    `dockers_v2` 名称为临时命名。
+
+    该配置将在 kmdo v3 版本（无明确发布时间）中替代 `dockers` 和 `docker_manifests`，
+    届时将统一命名为 `dockers`。
+
+    我们采用此方式是为了避免当前版本引入破坏性变更，
+    以便在 v3 正式发布前对该新版本功能进行充分测试。
+:::
+
+## 本地测试
+
+Docker buildx 不允许在不推送的情况下构建清单（manifest）。为解决此问题，当使用 --snapshot 参数构建时，
+kmdo 将不再构建清单，而是构建独立的镜像，并在每个标签后添加平台后缀。下面通过实际示例说明其效果：假设我们有如下配置：
+
+```yaml title=".kmdopkg.yaml"
+snapshot:
+  # 快照版本模板（用于生成快照构建的版本号）
+  # 此处使用 incpatch 函数自动递增版本号的修订号（patch）部分
+  version_template: "{{ incpatch .Version }}"
+dockers_v2:
+  - # 镜像名称列表
+    images:
+      - user/repo
+    # 镜像标签列表（使用模板变量引用版本号）
+    tags:
+      - "{{.Version}}"
+    # 要构建的目标平台列表
+    platforms:
+      - linux/amd64
+      - linux/arm64
+```
+
+如果执行 kmdo pkg release（即生产环境构建），例如会构建并发布镜像 user/repo:1.2.3。
+如果执行 kmdo pkg release --snapshot（快照构建），则会构建两个独立镜像：user/repo:1.2.4-amd64 和 user/repo:1.2.4-arm64。
+通过这种方式，您可以验证 Docker 构建过程和镜像是否能按预期正常工作。
+
+## 他如何工作
+
+您可以声明多个 Docker 镜像。这些镜像会自动与 builds 部分生成的二进制文件，以及 nfpms 部分生成的包进行匹配。
+若您的 builds 列表中仅包含一个项，配置可简化为在 .kmdopkg.yaml 文件中添加镜像名称和标签即可：
+
+```yaml title=".kmdopkg.yaml"
+dockers_v2:
+  - images:
+      - user/repo
+```
+
+您还需要在项目的根目录下创建一个 Dockerfile 文件：
+
+```dockerfile title="Dockerfile"
+FROM scratch
+ARG TARGETPLATFORM
+ENTRYPOINT ["/usr/bin/myprogram"]
+COPY $TARGETPLATFORM/myprogram /usr/bin/
+```
+
+此配置将构建并推送一个名为 user/repo:tagname 的 Docker 镜像。
+
+***补充说明***
+
+- 保留技术标识符：user/repo:tagname 是 Docker 镜像的标准命名格式（仓库名/镜像名:标签），保留原文以确保符合 Docker 命名规范；
+- 语义明确：build and push 译为「构建并推送」，准确对应 Docker 镜像的构建（docker build）和仓库推送（docker push）两个核心操作；
+- 简洁一致：延续前文翻译风格，避免冗余，确保技术文档的可读性和准确性。
+
+### Docker 构建上下文
+
+需要注意的是，我们并未在 `Dockerfile` 中构建任何二进制文件，
+而是仅将已构建好的二进制文件复制到 `scratch` 镜像中，并配置入口点（`entrypoint`）。
+
+设计思路是复用先前构建的二进制文件，而非在创建 Docker 镜像时重复构建。
+
+构建上下文本身是一个临时目录，包含所有已定义目标平台对应的二进制文件和包，
+您可通过 `COPY` 指令将其引入镜像（注意前文提到的 `$TARGETPLATFORM` 变量的使用方式）。
+
+由于该目录是临时创建的，因此**上下文不包含源代码文件**——这是一个重要推论。
+若您需要引入源代码目录中的其他文件，需将其添加到 `extra_files` 配置项中，
+这样文件才会被复制到构建上下文里。
+
+综上所述，Docker 构建上下文的结构通常如下：
+
+```bash
+temp-context-dir
+├── Dockerfile
+├── linux/arm64/myprogram
+├── linux/arm64/myprogram.rpm
+├── linux/arm64/myprogram.apk
+├── linux/arm64/myprogram.deb
+├── linux/amd64/myprogram
+├── linux/amd64/myprogram.rpm
+├── linux/amd64/myprogram.apk
+└── linux/amd64/myprogram.deb
+```
+
+`myprogram` 实际为您的二进制文件名，而 Linux 包名称将遵循其各自配置中定义的名称。
+
+## 配置构建器（Builder）
+
+要使 buildx 正常工作，您需要先配置一个支持多平台构建的构建器。
+
+在 Linux 系统中，可通过以下命令完成配置：
+
+```bash
+docker buildx create --name=kmdo --use
+docker run --privileged --rm tonistiigi/binfmt --install all
+```
+
+值得一提的是，此功能基于 buildx v0.24.0 版本开发并测试。

@@ -1,0 +1,169 @@
+---
+title: SCM
+sidebar:
+  label: SCM
+description: 'SCM configuration.'
+i18nReady: true
+---
+## GitHub
+
+### API 令牌（API Token）
+
+kmdo 需使用带有 `repo` 权限范围的 API 令牌，才能将产物部署到 GitHub。可通过[此链接](https://github.com/settings/tokens/new)创建令牌。
+
+该令牌需添加到环境变量 `GITHUB_TOKEN` 中。
+
+也可将 GitHub 令牌存储在文件中：kmdo 默认读取 `~/.config/kmdo/github_token` 文件，你也可在 `.kmdopkg.yaml` 中自定义文件路径：
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  github_token: ~/.path/to/my/github_token
+```
+
+注意：若环境变量 `GITHUB_TOKEN` 已存在，将优先使用该环境变量，忽略 `github_token` 文件配置。
+
+### GitHub Enterprise 配置
+
+kmdo 支持对接 GitHub Enterprise，需在 `.kmdopkg.yaml` 中配置其 URLs（支持普通字符串或模板值）：
+
+```yaml title=".kmdopkg.yaml"
+github_urls:
+  api: https://git.company.com/api/v3/
+  upload: https://git.company.com/api/uploads/
+  download: https://git.company.com/
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+```
+
+若未配置，将默认使用 GitHub 公共服务的 URLs。
+
+
+## GitLab
+
+### API 令牌（API Token）
+
+kmdo 需使用带有 `api` 权限范围的 API 令牌，才能将产物部署到 GitLab。该令牌可为个人访问令牌（Personal Access Token）或项目访问令牌（Project Access Token）。
+
+该令牌需添加到环境变量 `GITLAB_TOKEN` 中。
+
+也可将 GitLab 令牌存储在文件中：kmdo 默认读取 `~/.config/kmdo/gitlab_token` 文件，你也可在 `.kmdopkg.yaml` 中自定义文件路径：
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  gitlab_token: ~/.path/to/my/gitlab_token
+```
+
+:::tip
+
+若使用项目访问令牌（project access token），需同时将 `use_package_registry` 设为 `true`，否则可能无法正常工作。
+
+若通过 [受保护变量](https://docs.gitlab.com/ee/ci/variables/#protected-cicd-variables) 存储 kmdo 所需的任何值，请确保同时保护对应的标签（tag）。因为 GitLab 中，CI 作业仅在处理受保护引用（[分支](https://docs.gitlab.com/ee/user/project/protected_branches.html) 或 [标签](https://docs.gitlab.com/ee/user/project/protected_tags.html)）时，才能访问受保护变量。
+
+:::
+### GitLab Enterprise 或私有部署版本
+
+kmdo 支持对接 GitLab Enterprise 或私有部署的 GitLab 版本，需在 `.kmdopkg.yml` 配置文件中指定其 URLs（支持普通字符串或模板值）：
+
+```yaml title=".kmdopkg.yaml"
+gitlab_urls:
+  # GitLab API 基础地址（必填，需包含 API 版本路径）
+  api: https://gitlab.mycompany.com/api/v4/
+  # 产物下载地址（可选，若未指定则默认使用 API 地址推导）
+  download: https://gitlab.company.com
+
+  # 若使用自签名证书，设为 true 跳过 TLS 证书验证（不建议生产环境使用）
+  skip_tls_verify: false
+
+  # 若需上传产物到 GitLab 包注册表（Package Registry）而非发布附件，设为 true
+  # 仅支持 GitLab 13.5 及以上版本
+  use_package_registry: false
+
+  # 若 GITLAB_TOKEN 环境变量的值为 CI_JOB_TOKEN（GitLab CI 内置作业令牌），设为 true
+  use_job_token: true
+```
+
+若未配置，将默认使用 GitLab 公共服务的 URLs。
+
+:::note
+
+由于依赖 [发布功能](https://docs.gitlab.com/ee/user/project/releases/index.html) 和 
+[资产直接链接](https://docs.gitlab.com/ee/user/project/releases/index.html#permanent-links-to-release-assets)，
+向私有部署的 GitLab CE 发布版本仅支持 `v12.9+` 版本。
+
+:::
+
+### 通用包注册表（Generic Package Registry）
+
+GitLab 于 13.5 版本引入了 [通用包注册表](https://docs.gitlab.com/ee/user/packages/package_registry/index.html)。
+
+默认情况下，`kmdo` 会将发布文件作为“附件”上传，而附件可能受 [管理员设置的限制](https://docs.gitlab.com/ee/administration/settings/account_and_limit_settings.html)。值得注意的是，GitLab 托管实例的附件大小限制为 10MB，且该限制无法修改。
+
+上传到通用包注册表无此大小限制。若需使用该方式上传，需将 `use_package_registry` 设为 `true`。
+
+```yaml title=".kmdopkg.yaml"
+gitlab_urls:
+  use_package_registry: true
+```
+
+
+## Gitea
+
+### API 令牌
+kmdo 需 API 令牌才能将产物部署到 Gitea。
+可在你的 Gitea 实例的 `设置 | 应用 | 生成新令牌` 页面创建。
+
+该令牌应添加到环境变量 `GITEA_TOKEN` 中。
+
+也可将 Gitea 令牌放在文件中。
+kmdo 默认会检查 `~/.config/kmdo/gitea_token`（原文 "kmdp" 修正为 "kmdo"），但你可在 `.kmdopkg.yaml` 文件中修改：
+
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  gitea_token: ~/.path/to/my/gitea_token
+```
+注意：若环境变量已存在，将优先使用，忽略 `gitea_token` 文件配置。
+
+### 网址（URLs）
+
+可在 `.kmdopkg.yaml` 配置文件中指定 Gitea 的网址以使用 kmdo，支持普通字符串或模板值。
+
+```yaml title=".kmdopkg.yaml"
+gitea_urls:
+  api: https://gitea.myinstance.com/api/v1
+  download: https://gitea.myinstance.com
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+```
+
+
+## Kmup
+
+### API 令牌（API Token）
+kmdo 需 API 令牌才能将产物部署到 Kmup。
+可在你的 Kmup 实例的 `设置 | 应用 | 生成新令牌` 页面创建。
+
+该令牌应添加到环境变量 `KMUP_TOKEN` 中。
+
+也可将 Kmup 令牌放在文件中。
+kmdo 默认会检查 `~/.config/kmdo/kmup_token`（原文 "kmdp" 修正为 "kmdo"），但你可在 `.kmdopkg.yaml` 文件中修改：
+
+
+```yaml title=".kmdopkg.yaml"
+env_files:
+  kmup_token: ~/.path/to/my/kmup_token
+```
+
+注意：若环境变量已存在，将优先使用，忽略 `kmup_token` 文件配置。
+
+### 网址（URLs）
+
+可在 `.kmdopkg.yaml` 配置文件中指定 Kmup 的网址以使用 kmdo，支持普通字符串或模板值。
+
+```yaml title=".kmdopkg.yaml"
+kmup_urls:
+  api: https://localhost:3326/api/v1
+  download: https://localhost:3326/
+  # set to true if you use a self-signed certificate
+  skip_tls_verify: false
+```

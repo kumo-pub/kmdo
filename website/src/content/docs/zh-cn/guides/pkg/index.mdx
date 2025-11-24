@@ -1,0 +1,65 @@
+---
+title:  简介
+sidebar:
+  label:  简介
+description: '简化发布工程.'
+i18nReady: true
+---
+
+# 简介
+
+可以通过修改 `.kmdopkg.yaml`[^kmdopkg-yaml] 文件来定制 Kmdo。
+
+您可以通过运行以下程序生成示例配置：
+
+[`kmpkg init`](/zh-cn/ref/pkg/pkg_init/) 或从头开始。
+
+您还可以运行以下命令来检查您的配置是否有效：
+
+[`kmpkg check`](/zh-cn/ref/pkg/pkg_check/)，该命令会告诉您是否
+
+使用了已弃用或无效的选项。
+
+## JSON Schema
+
+Kmdo 还包含一个 [jsonschema](https://pub.kumose.cc/static/kmdopkg/schema.json) 文件，您可以使用它来获得更好的编辑器支持。
+
+
+```bash
+https://pub.kumose.cc/static/kmdopkg/schema.json
+```
+
+您也可以在 `.kmdopkg.yml` 配置文件中添加如下注释来指定：
+   
+```yaml
+# yaml-language-server: $schema=https://pub.kumose.cc/static/kmdopkg/schema.json
+```
+
+您还可以使用以下命令为您的特定版本生成它：
+
+[`kmdo pkg jsonschema`](https://pub.kumose.cc/static/kmdopkg/schema.json)。
+
+### 固定架构版本
+
+您可以通过从 GitHub 标签获取 schema 来锁定版本，例如：
+
+对于 `__VERSION__`（最新版本）：
+
+
+    ```bash
+    https://pub.kumose.cc/static/kmdopkg/__VERSION__/schema.json
+    ```
+
+- 虽然大多数文档都使用 `.kmdopkg.yaml` 文件名，但为了简便起见，
+  实际上也接受几种不同的文件名变体。优先级顺序如下：
+
+    - `.config/kmdopkg.yml`
+    - `.config/kmdopkg.yaml`
+    - `.kmdopkg.yml`
+    - `.kmdopkg.yaml`
+    - `kmdopkg.yml`
+    - `kmdopkg.yaml`
+
+- jsonschema 资源链接:
+    - [`jsonschema`](http://json-schema.org/draft/2020-12/json-schema-validation.html)
+    - [`schema`](/zh-cn/ref/pkg/pkg_jsonschema/)

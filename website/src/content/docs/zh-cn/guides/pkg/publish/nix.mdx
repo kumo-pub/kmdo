@@ -1,0 +1,316 @@
+---
+title: Nix 用户仓库
+sidebar:
+  label: Nix 用户仓库
+description: 'Nix User Repositories configuration.'
+i18nReady: true
+---
+
+
+在发布到 GitHub、GitLab 或 Gitea 后，kmdo 可生成并发布一个 **Nix 派生包（nix derivation）** 到已有的 [Nix 用户仓库（Nix User Repository）][nur] 中。
+
+`nix` 章节用于配置软件包（pkgs）的生成规则：
+
+
+```yaml title=".kmdopkg.yaml"
+nix:
+  - #
+    # 配方名称
+    #
+    # 默认值：项目名称
+    # 支持模板语法
+    name: myproject
+
+    # 要使用的归档产物 ID 列表
+    # 留空表示使用所有 ID
+    ids:
+      - foo
+      - bar
+
+    # 若构建环节生成多个 amd64 版本，指定要使用的版本
+    #
+    # 默认值：v1
+    goamd64: v1
+
+    # 由指定令牌（token）对应的平台（GitHub、GitLab 或 Gitea）决定的 URL
+    #
+    # 默认值因客户端而异
+    # 支持模板语法
+    url_template: "https://github.mycompany.com/foo/bar/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # 提交信息模板，会使用项目名称和当前 Git 标签
+    #
+    # 支持模板语法
+    commit_msg_template: "{{ .ProjectName }}: {{ .Tag }}"
+
+    # 文件在仓库中的存储路径
+    #
+    # 默认值：pkgs/<name>/default.nix
+    # 支持模板语法
+    path: pkgs/foo.nix
+
+    # 应用的官网地址
+    #
+    # 支持模板语法
+    # 默认值：从全局元数据中推导
+    homepage: "https://example.com/"
+
+    # 应用的描述
+    #
+    # 支持模板语法
+    # 默认值：从全局元数据中推导
+    description: "一款用于快速便捷创建鼓点节奏的软件。"
+
+    # 许可证名称
+    #
+    # 默认值：从全局元数据中推导
+    license: "mit"
+
+    # 启用后，kmdo 不会提交更新后的软件包，仅将其保存到 dist 目录
+    # 发布责任由用户自行承担
+    #
+    # 若设为 auto：当标签中包含预发布标识（如 v1.0.0-rc1）时，不会上传到仓库
+    #
+    # 支持模板语法
+    skip_upload: true
+
+    # 软件包的运行时依赖
+    dependencies:
+    - zsh
+    - chromium
+    - name: bash
+      os: linux  # 仅 Linux 系统需依赖
+    - name: fish
+      os: darwin  # 仅 macOS 系统需依赖
+
+    # 自定义安装脚本
+    #
+    # 默认值：'mkdir -p $out/bin; cp -vr $binary $out/bin/$binary'
+    # 若指定了 dependencies，会自动添加 `makeWrapper` 相关逻辑
+    # 支持模板语法
+    install: |
+      mkdir -p $out/bin
+      cp -vr ./foo $out/bin/foo
+
+    # 自定义额外安装指令
+    # 若默认安装脚本满足需求，可通过此配置补充额外操作，无需重写整个 install 脚本
+    #
+    # 支持模板语法
+    extra_install: |
+      installManPage ./manpages/foo.1.gz
+
+    # 自定义安装后脚本
+    # 可用于在 install 脚本执行完成后进行额外操作
+    #
+    # 支持模板语法
+    post_install: |
+      installShellCompletion ./completions/*
+
+    # 用于推送生成文件的仓库配置
+    repository:
+      # 仓库所有者
+      #
+      # 支持模板语法
+      owner: caarlos0
+
+      # 仓库名称
+      #
+      # 支持模板语法
+      name: my-repo
+
+      # 可选：指定分支
+      #
+      # 默认值：仓库的默认分支
+      # 支持模板语法
+      branch: main
+
+      # 可选：指定令牌（若与 GoReleaser 使用的令牌不同）
+      #
+      # 支持模板语法
+      token: "{{ .Env.GITHUB_PERSONAL_AUTH_TOKEN }}"
+
+      # 可选：指定令牌所属的源码管理平台（SCM），支持跨平台发布
+      #
+      # 仅当设置了 `token` 时生效
+      #
+      # 有效值：
+      # - 'github'
+      # - 'gitlab'
+      # - 'gitea'
+      #
+      # 此功能仅在 GoReleaser Pro 中可用
+      token_type: "github"
+
+      # 启用后，将创建拉取请求（PR）而非直接推送到指定分支
+      # 启用前请确保 'branch' 属性与基准分支（base）不同
+      #
+      # 可能需要个人访问令牌
+      pull_request:
+        # 是否启用拉取请求模式
+        enabled: true
+
+        # 是否将拉取请求设为草稿状态
+        draft: true
+
+        # 若拉取请求模板包含复选框，启用后会自动勾选所有复选框
+        #
+        # 此功能仅在 GoReleaser Pro 中可用，且仅支持 GitHub 平台的拉取请求
+        check_boxes: true
+
+        # 可选：设置拉取请求的正文内容
+        # 若仓库存在 PR 模板，将追加到该内容之后
+        #
+        # <!-- md:inline_version v2.12 -->（v2.12 及以上版本支持）
+        body: |
+          cc/ @foobar
+
+        # 基准分支可来自另一个仓库，此时上方的所有者（owner）和名称（name）将作为 HEAD 仓库，
+        # 支持跨仓库拉取请求
+        base:
+          owner: goreleaser
+          name: my-repo
+          branch: main
+
+      # 克隆普通 Git 仓库、创建文件、提交并推送
+      #
+      # 注意：仅当指定的 URL 非空时才会生效
+      git:
+        # 用于推送的 Git 地址
+        #
+        # 支持模板语法
+        url: 'ssh://git@myserver.com:repo.git'
+
+        # 用于向 Git 仓库提交代码的 SSH 私钥
+        # 可指定私钥路径或直接填写私钥内容
+        #
+        # 重要：该私钥不能设置密码保护！
+        # 警告：切勿在配置文件中暴露你的私钥！
+        #
+        # 支持模板语法
+        private_key: '{{ .Env.PRIVATE_KEY_PATH }}'
+
+        # 传递给 `GIT_SSH_COMMAND` 的值
+        # 主要用于指定拉取/推送 Git 地址时使用的 SSH 私钥
+        #
+        # 默认值：'ssh -i {{ .KeyPath }} -o StrictHostKeyChecking=accept-new -F /dev/null'
+        # 支持模板语法
+        ssh_command: 'ssh -i {{ .Env.KEY }} -o SomeOption=yes'
+
+    # 用于向仓库提交代码的 Git 作者信息
+    #
+    # <!-- md:inline_version v2.11 -->（v2.11 及以上版本支持）
+    # 默认值：从全局元数据中推导（v2.12 及以上版本）
+    commit_author:
+      # Git 作者名称
+      #
+      # 支持模板语法
+      name: goreleaserbot
+
+      # Git 作者邮箱
+      #
+      # 支持模板语法
+      email: bot@goreleaser.com
+
+      # Git 提交签名配置
+      # 仅当仓库类型为 'git' 时有效
+      #
+      # <!-- md:inline_version v2.11 -->（v2.11 及以上版本支持）
+      signing:
+        # 是否启用提交签名
+        enabled: true
+
+        # 用于签名的密钥
+        # 可填写密钥 ID、指纹、邮箱地址或密钥文件路径
+        #
+        # 支持模板语法
+        key: "{{ .Env.GPG_SIGNING_KEY }}"
+
+        # 用于签名的 GPG 程序
+        #
+        # 支持模板语法
+        program: gpg2
+
+        # 签名格式
+        #
+        # 有效值：openpgp、x509、ssh
+        # 默认值：openpgp
+        format: openpgp
+```
+
+### 暂不支持的功能
+
+- 生成从源码编译的软件包（使用 `buildGoModule` 方式）；
+- 当 `archives.format` 设为 `binary` 时，不支持生成软件包。
+### Dependencies
+
+#### `nix-hash`
+
+发布功能依赖 `nix-hash` 二进制文件，需确保其已添加到系统 `$PATH` 环境变量中。
+
+#### GitHub Actions（GitHub 工作流）
+
+若要通过 GitHub Actions 从一个仓库向另一个仓库发布软件包，**不可使用默认的工作流令牌（action token）**。
+
+需使用一个单独的令牌，该令牌需具备目标仓库（tap repository）的内容写入权限。
+
+有关详细信息，可查看文档：[resource not accessible by integration](../errors/resource-not-accessible-by-integration.md)（集成无法访问资源）。
+
+### 配置 NUR（Nix 用户仓库）
+
+如需配置 Nix 用户仓库（NUR），请遵循其 [官方仓库文档][nur] 中的指引。
+
+完成后，需执行以下操作：
+
+1. 使用 kmdo 发布版本：kmdo 会在 `./pkgs/{name}/default.nix`（或你指定的路径）生成软件包文件；
+2. 确保 `./flake.nix` 配置符合需求，尤其是 `systems` 相关设置；
+3. 将你的软件包添加到 `./default.nix` 中；
+4. 编辑 `README.md`，移除模板相关内容。
+
+操作完成！
+
+[nur]: https://github.com/nix-community/NUR
+
+### 拉取请求（Pull Requests）
+
+kmdo 支持不直接推送到主分支，而是将更改推送到功能分支（feature branch），并创建拉取请求提交变更。
+
+#### 模板（Templates）
+
+kmdo 会检查仓库中是否存在 `.github/PULL_REQUEST_TEMPLATE.md` 文件，若存在则将其内容作为拉取请求的正文。
+
+此举旨在为 `winget-pkgs`、`nixpkgs` 等仓库的维护者减少额外工作。
+
+#### 跨仓库拉取请求（Cross-repository pull requests）
+
+你也可以将更改推送到分支仓库（fork），并在原始仓库的分支中创建拉取请求。
+
+以下是具体配置示例：
+
+```yaml title=".kmdopkg.yaml"
+# ...
+something: # can be nix, brews, etc...
+  - repository:
+      owner: john
+      name: repo
+      branch: "{{.ProjectName}}-{{.Version}}"
+      pull_request:
+        enabled: true
+        base:
+          owner: mike
+          name: repo
+          branch: main
+```
+
+此配置将实现以下操作：
+
+- 尝试将分支仓库（fork）`john/repo` 与原仓库 `mike/repo:main` 同步（仅 GitHub 平台支持）；
+- 在 `john/repo` 仓库的 `foo-1.2.3` 分支中创建相关文件（假设 `ProjectName=foo` 且 `Version=1.2.3`）。[^head]
+- 发起从 `john/repo` 到 `mike/repo` 的拉取请求，目标分支为 `main`。[^base]
+
+`[^head]`: 按 GitHub 术语，即 `head=john:repo:foo-1.2.3`（格式：用户名:仓库名:分支名）
+`[^base]`: 按 GitHub 术语，即 `base=mike:repo:main`（格式：用户名:仓库名:目标分支名）
+
+#### 暂不支持的功能
+
+- 无法向分支仓库（fork）发起拉取请求（`go-github` 库缺少所需支持字段）；
+- 由于操作可能因多种原因失败，若发生错误，会将错误日志输出到发布记录中，但不会终止流水线执行。

@@ -1,0 +1,113 @@
+---
+title: 签名 Docker
+sidebar:
+  label: 签名 Docker
+description: '签名 Docker Releases.'
+i18nReady: true
+---
+
+
+Kmdo 同样支持为 Docker 镜像及镜像清单（Manifests）签名。
+
+此签名流程基于通用的 [sign](/zh-cn/guides/pkg/sig/sign/) 流程设计，且原生适配 [cosign](https://github.com/sigstore/cosign) 工具。
+
+:::note
+
+请注意，此签名流程仅会在 kmdo 执行末期（发布阶段）运行——这是因为 cosign 会修改镜像仓库中的镜像文件。
+
+:::
+
+如需自定义该签名流程，可使用以下配置选项：
+
+```yaml title=".kmdopkg.yaml"
+docker_signs:
+  - # 签名配置的唯一标识 ID（必须唯一）
+    # 仅在需要生成某种签名文件时生效
+    #
+    # 默认值：'default'
+    id: foo
+
+    # 签名工具的命令路径（可指定绝对路径或系统环境变量中的命令）
+    #
+    # 默认值：'cosign'（使用系统环境变量中配置的 cosign 工具）
+    cmd: cosign
+
+    # 传递给签名工具的命令行参数
+    #
+    # 默认值：["sign", "--key=cosign.key", "${artifact}@${digest}", "--yes"]
+    # （含义：sign 表示执行签名操作，--key 指定 cosign 密钥文件，${artifact}@${digest} 为镜像及摘要，--yes 自动确认交互）
+    # 支持模板语法
+    args:
+      - "sign"
+      - "--key=cosign.key"
+      - "--upload=false"  # 示例：禁用签名上传（仅本地生成签名）
+      - "${artifact}"     # 待签名的 Docker 镜像/清单标识
+      - "--yes"           # cosign 2.0.0+ 版本必填（自动确认所有交互提示）
+
+    # 要签名的制品类型（指定需生成签名的 Docker 相关产物类别）
+    #
+    # 有效值说明：
+    #   all:       所有相关制品（镜像 + 清单）
+    #   none:      不进行任何签名
+    #   images:    仅 Docker 镜像
+    #   manifests: 仅 Docker 镜像清单
+    #   '':        仅 dockers_v2 流程构建的镜像（默认行为）
+    #
+    # 默认值：''（空字符串）
+    artifacts: all
+
+    # 要签名的制品 ID 列表（指定具体哪个 Docker 镜像/清单需要生成签名）
+    ids:
+      - foo
+      - bar  # 示例：仅为 ID 为 foo、bar 的 Docker 制品签名
+
+    # 作为标准输入（stdin）传递给签名命令的数据
+    #
+    # 支持模板语法
+    stdin: "{{ .Env.COSIGN_PWD }}"  # 示例：从环境变量传入 cosign 密钥解密密码
+
+    # 作为标准输入（stdin）传递给签名命令的文件路径
+    stdin_file: ./.password  # 示例：从 .password 文件读取密钥解密密码
+
+    # 传递给签名命令及模板的环境变量列表
+    env:
+      - FOO=bar
+      - HONK=honkhonk  # 示例：自定义环境变量
+
+    # 签名命令的标准输出（stdout）和标准错误（stderr）默认会被丢弃，仅当 kmdo 启用 `--verbose` 时显示
+    # 若需强制显示输出，可将此配置设为 true（便于调试签名失败问题）
+    output: true
+```
+
+### 可用变量名称（Available variable names）
+
+以下环境变量可在支持模板语法的字段中使用：
+
+- `${artifact}`[^1]：待签名制品的路径
+- `${digest}`[^2]：待签名镜像/清单的哈希摘要
+- `${artifactID}`：待签名制品的 ID
+- `${certificate}`：证书文件名（若已配置 `certificate` 字段）
+
+[^1]:
+    注意：该变量可能包含 `/` 字符，若使用不当可能被解析为文件系统中的实际路径，请谨慎使用。
+
+[^2]:
+    该摘要由 kmdo 内部执行 Docker 推送（push）操作时自动提取。使用摘要可确保签名指向正确的镜像版本，避免并发场景下的签名错误。
+
+## 常用示例（Common usage example）
+
+假设你的代码仓库根目录下存在 `cosign.key` 文件，且已配置 `COSIGN_PWD` 环境变量（用于解密密钥），以下是同时为 Docker 镜像和清单签名的最简配置：
+
+
+```yaml title=".kmdopkg.yaml"
+docker_signs:
+  - artifacts: all
+    stdin: "{{ .Env.COSIGN_PWD }}"
+```
+
+之后你（及其他任何人）可通过以下命令验证该镜像：
+
+
+```bash
+cosign verify --key cosign.pub your/image
+```

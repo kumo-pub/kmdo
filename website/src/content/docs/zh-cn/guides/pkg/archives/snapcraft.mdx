@@ -1,0 +1,316 @@
+---
+title: Snapcraft 包（snaps）
+sidebar:
+  label: Snapcraft 包（snaps）
+description: 'Snapcraft 包（snaps） Releases.'
+i18nReady: true
+---
+
+Kmdo 也可以生成 snap 包。
+[Snaps](http://snapcraft.io/)
+ 是一种新的打包格式，可以让你将项目直接发布到 Ubuntu Store。
+发布后，项目可以在所有 [支持的 Linux 发行版](https://snapcraft.io/docs/core/install)
+ 上安装，并享受 自动、事务性更新。
+
+:::tip
+
+   Snapcraft 包 不能在 Docker 容器内构建。
+:::
+
+You can read more about it in the [snapcraft docs](https://snapcraft.io/docs/).
+
+Available options:
+
+你可以在 Snapcraft [文档](https://snapcraft.io/docs/)中了解更多信息。
+
+可用选项如下：
+
+```yaml title=".kmdopkg.yaml"
+snapcrafts:
+  - #
+    # Snapcraft 配置的唯一标识符（ID），必须唯一
+    #
+    # 默认值：'default'
+    id: foo
+
+    # 应归档到当前包中的构建任务 ID 列表
+    #
+    # <!-- md:inline_version v2.8 -->（旧版本使用 'builds' 字段）
+    # 默认值：空列表（包含所有构建任务）
+    ids:
+      - foo
+      - bar
+
+    # 可自定义包名称
+    #
+    # 默认值：'{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
+    # 支持模板语法
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+    # Snap 包名称（可选）
+    #
+    # 默认值：项目名称
+    name: drumroll
+
+    # 应用程序的标准标题，将显示在软件中心等图形化前端
+    title: 鼓声滚动
+
+    # 图标图片路径，用于在 snapcraft.io 商店页面和其他图形化商店前端展示
+    icon: ./icon.png
+
+    # 是否将 Snap 包发布到 Snapcraft 商店
+    # 注意：发布前需先执行 `snapcraft login` 登录
+    publish: true
+
+    # 应用程序的简短介绍（电梯演讲）
+    # 最多 79 个字符
+    summary: 快速轻松创建鼓声滚动效果的软件
+
+    # 应用程序的详细描述
+    # 可使用 1-2 个段落介绍核心功能，建议控制在 100 字以内
+    # 简洁的描述在应用商店中展示效果更佳
+    description: 这是市面上最棒的鼓声滚动应用！立即安装，体验震撼效果！
+
+    # 禁用当前配置
+    #
+    # 支持模板语法
+    disable: true
+
+    # Snap 包将推送至商店的渠道列表
+    #
+    # 渠道相关详情：
+    # https://snapcraft.io/docs/reference/channels（英文）
+    #
+    # 默认值：
+    #   grade 为 'stable' 时：["edge", "beta", "candidate", "stable"]
+    #   grade 为 'devel' 时：["edge", "beta"]
+    # 支持模板语法
+    channel_templates:
+      - edge
+      - beta
+      - candidate
+      - stable
+      - "{{ .Major }}.{{ .Minor }}/edge"
+      - "{{ .Major }}.{{ .Minor }}/beta"
+      - "{{ .Major }}.{{ .Minor }}/candidate"
+      - "{{ .Major }}.{{ .Minor }}/stable"
+
+    # 发布防护等级，防止未就绪的 Snap 包发布给所有用户
+    # `devel`：仅允许发布到商店的 `edge` 和 `beta` 渠道
+    # `stable`：允许发布到 `edge`、`beta`、`candidate` 和 `stable` 所有渠道
+    #
+    # 默认值：'stable'
+    grade: stable
+
+    # Snap 包的 confinement（沙箱）策略，支持三种类型：
+    # `strict`：严格模式（推荐），仅允许访问自身命名空间内的资源
+    # `devmode`：开发模式，提供更多权限用于调试
+    # `classic`：经典模式，几乎无限制访问系统资源
+    # 严格模式下可通过为应用声明 `plugs` 获取额外权限（详见下文）
+    # 更多详情：
+    # https://snapcraft.io/docs/reference/confinement（英文）
+    #
+    # 默认值：'strict'
+    confinement: strict
+
+    # 应用程序的许可证，基于 SPDX 许可证表达式：
+    # https://spdx.org/licenses（英文）
+    license: MIT
+
+    # 作为 Snap 包运行环境的基础镜像（base snap）
+    # 有效值：
+    # * bare - 空基础镜像
+    # * core - Ubuntu Core 16
+    # * core18 - Ubuntu Core 18
+    base: core18
+
+    # 安装当前 Snap 包所需的核心功能支持列表
+    assumes:
+      - snapd2.38
+
+    # 顶级关键字，用于定义带有权限插件（plug）的钩子（hook）
+    hooks:
+      install:
+        - network
+
+    # 向最终 Snap 包中添加额外文件
+    # 适用于包含包装脚本或其他静态资源文件
+    # 源文件路径相对于项目根目录，目标路径相对于 Snap 包的 prime 目录
+    extra_files:
+      - source: drumroll.wrapper
+        destination: bin/drumroll.wrapper
+        mode: 0755
+
+    # 通过布局（layouts）可将 $SNAP、$SNAP_DATA、$SNAP_COMMON 等目录下的资源
+    # 映射到 /usr、/var、/etc 等系统路径
+    # 适用于预编译二进制文件或库，需访问默认沙箱外的文件/目录时
+    # Snap 环境变量说明：
+    # * HOME: 所有命令的家目录，指向 SNAP_USER_DATA
+    # * SNAP: 只读安装目录
+    # * SNAP_ARCH: 设备架构（如 amd64、arm64、armhf、i386 等）
+    # * SNAP_DATA: 特定版本 Snap 包的可写目录
+    # * SNAP_COMMON: 所有版本 Snap 包共享的可写目录
+    # * SNAP_LIBRARY_PATH: 追加到 LD_LIBRARY_PATH 的额外目录
+    # * SNAP_NAME: Snap 包名称
+    # * SNAP_INSTANCE_NAME: 包含实例密钥的 Snap 实例名称（snapd 2.36+）
+    # * SNAP_INSTANCE_KEY: 实例密钥（如有）（snapd 2.36+）
+    # * SNAP_REVISION: Snap 包的商店修订版本
+    # * SNAP_USER_DATA: 特定版本 Snap 包的用户级可写目录
+    # * SNAP_USER_COMMON: 所有版本 Snap 包共享的用户级可写目录
+    # * SNAP_VERSION: Snap 包版本（来自 snap.yaml）
+    # 更多详情：
+    # https://snapcraft.io/docs/snap-layouts（英文）
+    layout:
+      # 沙箱中需要访问的路径
+      /etc/drumroll:
+        # 要映射到沙箱路径的外部文件/目录
+        # 有效关键字：
+        # * bind - 绑定挂载目录
+        # * bind_file - 绑定挂载文件
+        # * symlink - 创建符号链接
+        # * type - 挂载私有临时内存文件系统
+        bind: $SNAP_DATA/etc
+
+    # kmdo 构建的每个二进制文件都是 Snap 包中的一个应用（app）
+    # 此部分可声明应用的额外配置（可选）
+    # 参考：https://snapcraft.io/docs/snapcraft-app-and-service-metadata（英文）
+    apps:
+      # 应用名称必须与构建的二进制文件名或 snapcraft 名称一致
+      drumroll:
+        # 传递给二进制文件的参数（可选）
+        args: --foo
+
+        # 为指定命令生成的包装器类型
+        adapter: none
+
+        # 当前应用启动后，需顺序启动的其他应用列表
+        after: ["postdrum"]
+
+        # 应用命令的别名
+        # 参考：https://snapcraft.io/docs/commands-and-aliases#heading--aliases（英文）
+        aliases: ["droll"]
+
+        # 定义用于桌面会话启动应用的 .desktop 文件名称
+        # 参考：https://snapcraft.io/docs/snap-format#heading--autostart（英文）
+        autostart: drumroll.desktop
+
+        # 当前应用启动前，需顺序启动的其他应用列表
+        before: ["predrum"]
+
+        # 服务可访问的 D-Bus 名称（daemon=dbus 时必填）
+        bus_name: drumbus
+
+        # 启动当前应用前需按顺序执行的命令列表
+        command_chain: ["foo", "bar", "baz"]
+
+        # 外部 appstream 文件中的 desktop-id 标识符
+        # 参考：https://snapcraft.io/docs/using-external-metadata（英文）
+        common_id: "com.example.drumroll"
+
+        # Bash 补全脚本片段
+        # 参考：https://snapcraft.io/docs/tab-completion（英文）
+        completer: drumroll-completion.bash
+
+        # 覆盖命令名称
+        #
+        # 默认值：应用名称（AppName）
+        command: bin/drumroll.wrapper
+
+        # 使应用自动启动并在后台持续运行（守护进程模式）
+        # 可选值：simple（简单守护进程）、forking（fork 模式）、oneshot（一次性执行）、dbus（DBus 激活）、notify（通知激活）
+        daemon: simple
+
+        # .desktop 文件的路径
+        desktop: usr/share/applications/drumroll.desktop
+
+        # 环境变量键值对
+        environment:
+          foo: bar
+          baz: quo
+
+        # 应用依赖的 Snapcraft 扩展列表
+        # 参考：https://snapcraft.io/docs/snapcraft-extensions（英文）
+        extensions: ["gnome-3-38"]
+
+        # 新安装的守护进程是否自动启动
+        # 可选值："enable"（启用）、"disable"（禁用）、"mask"（屏蔽）
+        # 需设置 `daemon` 字段
+        install_mode: "disable"
+
+        # 直接传递到 snap.yaml 的键值对属性（无需 Snapcraft 验证）
+        # 参考：https://snapcraft.io/docs/using-in-development-features（英文）
+        passthrough:
+          foo: bar
+
+        # 应用需要的额外权限（超出默认沙箱限制时声明）
+        # 支持的插件（plugs）及权限说明：
+        # https://snapcraft.io/docs/supported-interfaces（英文）
+        plugs: ["home", "network", "personal-files"]
+
+        # 服务停止后在 Snap 包内执行的命令
+        post_stop_command: foo
+
+        # Snap 包更新时守护进程的重启策略
+        # 可选值：restart（重启）、endure（持续运行）、shutdown（关闭）
+        refresh_mode: endure
+
+        # 用于要求服务重新加载配置的命令
+        # 需设置 `daemon` 字段
+        reload_command: foo
+
+        # 守护进程的重启条件
+        # 可选值："always"（始终重启）、"on-failure"（失败时重启）、"on-abnormal"（异常时重启）、"on-abort"（中止时重启）、"on-watchdog"（看门狗触发时重启）
+        # 参考：https://snapcraft.io/docs/snapcraft-yaml-reference（英文）
+        restart_condition: "always"
+
+        # 可供接口连接的插槽（slots）列表
+        slots: ["foo", "bar", "baz"]
+
+        # 将守护进程的套接字映射到服务并激活
+        # 需在 `plugs` 中包含 `network-bind`
+        sockets:
+          sock:
+            listen-stream: $SNAP_COMMON/socket
+            socket-group: socket-group
+            socket-mode: 416
+
+        # 等待守护进程启动的超时时间
+        start_timeout: 42ms
+
+        # 用于停止服务的命令
+        # 需设置 `daemon` 字段
+        stop_command: foo
+
+        # 守护进程的停止方式
+        # 可选值：sigterm（发送 SIGTERM 信号）、sigkill（发送 SIGKILL 信号）、control-group（通过控制组停止）
+        # 需设置 `daemon` 字段
+        stop_mode: sigterm
+
+        # 等待守护进程停止的超时时间
+        stop_timeout: 42ms
+
+        # 服务或命令的运行调度规则
+        # 需设置 `daemon` 字段
+        # 参考：https://snapcraft.io/docs/services-and-daemons（英文）
+        timer: "00:00-24:00/24"
+
+        # 服务看门狗超时时间
+        # 需在 `plugs` 中包含 `daemon-notify`
+        watchdog_timeout: 42ms
+
+    # 配置插件（plugs）的访问权限
+    # 如 system-files、personal-files 等插件需在此声明
+    plugs:
+      personal-files:
+        read:
+          - $HOME/.foo
+        write:
+          - $HOME/.foo
+          - $HOME/.foobar
+```
+
+:::note
+
+  kmdo 不会为您安装 snapcraft 及其任何依赖项。
+
+:::

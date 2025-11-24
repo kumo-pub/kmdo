@@ -3,22 +3,15 @@ export default {
 	'start.welcome': 'Welcome, world!',
 	'start.newProject': 'Start a new project',
 	'start.config': 'Configuration',
-	'start.migrate': 'Migrate to Kumo',
 
 	guides: 'Guides and recipes',
-	'guides.routing': 'Routing and navigation',
-	'guides.ui': 'Build your UI',
-	'guides.content': 'Add content to your site',
-	'guides.serverRendering': 'Server rendering',
-	'guides.upgrade': 'Upgrade',
-	'guides.upgrade.major': 'Major upgrade guides',
-	'guides.recipes': 'How-to recipes',
+	'guides.pkg': "pushlish release",
+	'guides.pkg.archives': "package and archives",
+	'guides.pkg.sign':"Sign Package",
+	'guides.pkg.publish':"Publish Package",
+	'guides.pkg.builds':"build Package",
 
 	reference: 'Reference',
-	'reference.runtime': 'Runtime API',
-	'reference.other': 'Other development APIs',
-	'reference.syntax': 'Kumo Template Syntax',
-	'reference.experimental': 'Experimental features',
 	'reference.pkg': 'cmd pkg',
 	'reference.helper': 'cmd helper',
 
@@ -32,4 +25,6 @@ export default {
 	'thirdParty.cms': 'Content management systems',
 	'thirdParty.backend': 'Backend services',
 	'thirdParty.media': 'Image and video hosting',
+
+	shooting: 'Trouble and shooting',
 };

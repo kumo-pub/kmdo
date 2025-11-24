@@ -1,0 +1,148 @@
+---
+title: 二进制文件签名
+sidebar:
+  label: 二进制文件签名
+description: '二进制文件签名 Releases.'
+i18nReady: true
+---
+
+## 二进制文件签名（Signing Binaries）
+
+此功能可用于将二进制文件与其签名一同归档，而非对整个归档包进行签名。
+
+默认配置会通过 [GnuPG](https://www.gnupg.org/) 工具，使用你的默认密钥为校验和文件生成独立签名（detached signature）。
+
+如需启用二进制文件签名，只需在配置中添加以下内容：
+
+
+```yaml title=".kmdopkg.yaml"
+binary_signs:
+  - {}
+```
+
+如需自定义二进制文件签名流程，可使用以下配置选项：
+
+```yaml title=".kmdopkg.yaml"
+binary_signs:
+  - # 签名配置的唯一标识 ID（必须唯一，用于区分多个签名配置）
+    #
+    # 默认值：'default'
+    id: foo
+
+    # 签名文件的名称
+    #
+    # 默认值：'${artifact}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
+    # （含义：生成包含制品名、系统、架构等信息的签名文件名，适配 Arm/Mips/Amd64 等架构）
+    # 支持模板语法
+    signature: "${artifact}_sig"  # 示例：签名文件名格式为「制品名_sig」
+
+    # 签名工具的命令路径（可指定绝对路径或系统环境变量中的命令）
+    #
+    # 默认值：'gpg'（使用系统环境变量中配置的 GnuPG 工具）
+    cmd: gpg2  # 示例：使用 gpg2 工具进行签名
+
+    # 传递给签名工具的命令行参数
+    #
+    # 若需使用特定密钥签名，可配置为：
+    # args: ["-u", "<密钥 ID、指纹或邮箱...>", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    # （含义：-u 指定签名密钥，--output 指定签名输出文件，--detach-sign 生成独立签名）
+    #
+    # 默认值：["--output", "${signature}", "--detach-sign", "${artifact}"]
+    # 支持模板语法
+    args: ["--output", "${signature}", "${artifact}", "{{ .ProjectName }}"]  # 示例：自定义签名参数
+
+    # 要签名的制品类型（指定需生成签名的产物类别）
+    #
+    # 有效值说明：
+    # - none:       不进行任何签名
+    # - binary:     构建生成的二进制可执行文件
+    #
+    # 默认值：'binary'
+    artifacts: binary
+
+    # 要签名的制品 ID 列表（指定具体哪个制品需要生成签名）
+    #
+    # 注意：若 `artifacts` 字段值为 checksum 或 source，则此配置无效
+    ids:
+      - foo
+      - bar  # 示例：仅为 ID 为 foo、bar 的二进制制品生成签名
+
+    # 对制品进行进一步过滤（仅匹配表达式的制品会被签名）
+    #
+    # 不匹配该表达式的制品将被忽略
+    #
+    # 仅专业版（Pro）支持
+    # 支持模板语法
+    if: '{{ eq .Os "linux" }}'  # 示例：仅为 Linux 系统的制品签名
+
+    # 作为标准输入（stdin）传递给签名命令的数据
+    #
+    # 支持模板语法
+    stdin: "{{ .Env.GPG_PASSWORD }}"  # 示例：从环境变量传入 GPG 密码
+
+    # 作为标准输入（stdin）传递给签名命令的文件路径
+    stdin_file: ./.password  # 示例：从 .password 文件读取签名所需密码
+
+    # 指定签名命令需写入的证书名称（用于存储签名相关证书）
+    #
+    # 后续可在 `args` 配置中通过 `${certificate}` 或 `.Env.certificate` 引用该名称
+    #
+    # 此配置特别适用于 cosign 无密钥签名场景，其他场景通常无需使用
+    #
+    # 注意：此处需填写证书名称（而非路径）
+    # 支持模板语法
+    certificate: '{{ trimsuffix .Env.artifact ".tar.gz" }}.pem'  # 示例：生成格式为「制品名.pem」的证书
+
+    # 传递给签名命令及模板的环境变量列表
+    env:
+      - FOO=bar
+      - HONK=honkhonk  # 示例：自定义环境变量
+
+    # 签名命令的标准输出（stdout）和标准错误（stderr）默认会被丢弃，仅当 kmdo 启用 `--verbose` 时显示
+    # 若需强制显示输出，可将此配置设为 true
+    output: true
+```
+
+### 可用变量名称（Available variable names）
+
+以下环境变量可在支持模板语法的字段中使用：
+
+- `${artifact}`：待签名制品的路径
+- `${artifactID}`：待签名制品的 ID
+- `${certificate}`：证书文件名（若已配置 `certificate` 字段）
+- `${signature}`：签名文件名
+
+### 与默认 `signs` 配置的差异（Differences from the default `signs`）
+
+唯一差异在于制品过滤逻辑，且此流程会在构建阶段执行。
+
+在 `signs` 配置中，若将 `artifacts` 设为 `binary`，需同时将 `archives` 的 `format` 配置为 `binary` 才会生效；
+而本配置（`binary_signs`）中，无需额外配置即可生效。
+
+## 使用 cosign 签名（Signing with cosign）
+
+你也可以通过 [cosign][cosign] 为制品签名。
+
+假设你的代码仓库根目录下存在 `cosign.key` 文件，且已设置 `COSIGN_PWD` 环境变量（用于解密密钥），以下是一个简单的使用示例：
+
+
+
+```yaml title=".kmdopkg.yaml"
+binary_signs:
+  - cmd: cosign
+    stdin: "{{ .Env.COSIGN_PWD }}"
+    args:
+      - "sign-blob"
+      - "--key=cosign.key"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+```
+
+你的用户可通过以下命令验证签名：
+
+```sh
+cosign verify-blob -key cosign.pub -signature binary.sig binary
+```
+
+[cosign]: https://github.com/sigstore/cosign

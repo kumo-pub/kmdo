@@ -1,0 +1,154 @@
+---
+title: 自定义发布器
+sidebar:
+  label: 自定义发布器
+description: '自定义发布器 configuration.'
+i18nReady: true
+---
+
+自定义发布器
+
+kmdo 支持通过执行自定义发布器发布产物。
+
+## 工作原理
+
+你可以声明多个 `publishers` 实例。每个发布器会对每个（经过筛选的）产物执行一次。例如，2 个发布器搭配 3 个产物时，总共会执行 6 次。
+
+发布器按定义顺序**串行执行**，而不同产物的发布执行会**并行化处理**。
+换句话说，发布器需支持多实例并行运行（确保线程安全）。
+
+若仅需配置一个 `publishers` 实例，直接在 `.kmdopkg.yaml` 中添加命令即可，配置如下：
+
+```yaml
+publishers:
+  - name: my-publisher
+    cmd: custom-publisher -version={{ .Version }} {{ abs .ArtifactPath }}
+```
+
+### 环境变量（Environment）
+
+作为自定义发布器执行的命令，仅继承系统环境变量的子集（与现有钩子不同）。
+此举旨在防止敏感数据意外泄露，并更好地控制每个独立进程的环境（避免变量名无意冲突）。
+
+保留的环境变量如下：
+
+- `HOME`
+- `USER`
+- `USERPROFILE`
+- `TMPDIR`
+- `TMP`
+- `TEMP`
+- `PATH`
+
+不过你可以使用 `.Env.NAME` 模板语法，实现更显式的环境变量继承。
+
+```yaml
+- cmd: custom-publisher
+  env:
+    - SECRET_TOKEN={{ .Env.SECRET_TOKEN }}
+```
+
+发布器的显式环境变量同样优先级高于继承的环境变量集。
+
+### 支持模板的字段（Variables）
+
+命令（`cmd`）、工作目录（`dir`）和环境变量（`env`）均支持模板语法：
+
+```yaml
+publishers:
+  - name: production
+    cmd: |
+      custom-publisher \
+      -product={{ .ProjectName }} \
+      -version={{ .Version }} \
+      {{ .ArtifactName }}
+    dir: "{{ dir .ArtifactPath }}"
+    env:
+      - TOKEN={{ .Env.CUSTOM_PUBLISHER_TOKEN }}
+```
+
+因此，上述示例将执行以下操作：
+
+```bash
+custom-publisher -product=kmdo -version=1.0.0 kmdo_1.0.0_linux_amd64.zip
+```
+
+在 `/path/to/dist` 目录下执行（环境变量 `TOKEN=token`），前提是执行 kmdo 时已设置 `CUSTOM_PUBLISHER_TOKEN=token`。
+
+支持的变量如下：
+
+- `Version`
+- `Tag`
+- `ProjectName`
+- `ArtifactName`
+- `ArtifactPath`
+- `Os`
+- `Arch`
+- `Arm`
+
+## 自定义配置（Customization）
+
+当然，你可以进行多项自定义配置：
+
+```yaml title=".kmdopkg.yaml"
+publishers:
+  - #
+    # 发布器的唯一名称，用于标识
+    name: "custom"
+
+    # 要发布的产物 ID 列表
+    ids:
+      - foo
+      - bar
+
+    # 是否发布校验和文件
+    checksum: true
+
+    # 是否上传 metadata.json 和 artifacts.json 文件
+    meta: true
+
+    # 是否发布签名文件
+    signature: true
+
+    # 执行命令的工作目录
+    dir: "/utils"
+
+    # 要执行的命令
+    cmd: custom-publisher -product={{ .ProjectName }} -version={{ .Version }} {{ .ArtifactPath }}
+
+    # 环境变量
+    env:
+      - API_TOKEN=secret-token
+
+    # 是否禁用当前这个上传配置
+    #
+    # 支持模板语法
+    disable: "{{ if .IsNightly }}true{{ end }}"
+
+    # 可发布额外的预存文件
+    # 发布后的文件名取路径的最后一部分（基准名）
+    # 若存在同名文件，将使用最后找到的那个
+    #
+    # 支持模板语法
+    extra_files:
+      - glob: ./path/to/file.txt
+      - glob: ./glob/**/to/**/file/**/*
+      - glob: ./glob/foo/to/bar/file/foobar/override_from_previous
+      - glob: ./single_file.txt
+        name_template: file.txt # 注意：仅当 glob 匹配单个文件时生效
+
+    # 允许在后续模板中使用自定义发布器的输出（例如在发布说明中）
+    #
+    # 以下示例可通过 '{{ index .Outputs "foo.deb" }}' 引用（假设产物名为 'foo.deb'）
+    #
+    # 支持模板语法
+    output: "check-{{ .ArtifactName }}"
+```
+
+:::tip
+
+这将作为发布阶段的最后一步执行。
+
+:::
+
+通过这些配置，你可以将产物推送到任意数量的目标端点，即便这些端点需要复杂的身份验证或具备其他复杂要求。

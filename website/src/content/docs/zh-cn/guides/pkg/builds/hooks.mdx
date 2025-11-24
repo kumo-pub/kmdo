@@ -1,0 +1,67 @@
+---
+title: 编译绑定
+sidebar:
+  label: 编译绑定
+description: 'Build Hooks building.'
+i18nReady: true
+---
+
+前置钩子（pre hooks）和后置钩子（post hooks）会针对每个构建目标执行——无论这些目标是通过操作系统与架构的矩阵生成，还是在 `targets` 
+中显式定义，且与所使用的 `builder` 无关。
+
+除上述简单声明方式外，还支持声明多个钩子，以帮助在不同构建环境间保持配置的可复用性。
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - id: "with-hooks"
+    builder: go
+    targets:
+      - "darwin_amd64"
+      - "windows_amd64"
+    hooks:
+      pre:
+        - first-script.sh
+        - second-script.sh
+      post:
+        - upx "{{ .Path }}"
+        - codesign -project="{{ .ProjectName }}" "{{ .Path }}"
+```
+
+每个钩子还可配置独立的工作目录和环境变量：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - id: "with-hooks"
+    builder: go
+    targets:
+      - "darwin_amd64"
+      - "windows_amd64"
+    hooks:
+      pre:
+        - cmd: first-script.sh
+          dir:
+            "{{ dir .Dist}}"
+            # Always print command output, otherwise only visible in debug mode.
+          output: true
+          env:
+            - HOOK_SPECIFIC_VAR={{ .Env.GLOBAL_VAR }}
+        - second-script.sh
+```
+钩子的所有属性（`cmd`、`dir` 和 `env`）均支持[模板语法](/zh-cn/guides/pkg/general/#模版)，其中后置钩子（post hooks）可访问
+二进制产物（因其在构建完成后执行）。
+
+此外，以下构建详情对前置钩子（pre hooks）和后置钩子（post hooks）均可见：
+
+| 键名    | 描述                                  |
+| ------- | ------------------------------------- |
+| .Name   | 二进制文件名称（示例：`bin.exe`）      |
+| .Ext    | 文件后缀（示例：`.exe`）               |
+| .Path   | 二进制文件的绝对路径                  |
+| .Target | 构建目标（示例：`darwin_amd64`）       |
+
+环境变量的继承与覆盖遵循以下优先级顺序（从低到高）：
+
+- 全局配置（`env`）
+- 构建配置（`builds[].env`）
+- 钩子配置（`builds[].hooks.pre[].env` 和 `builds[].hooks.post[].env`）
+
