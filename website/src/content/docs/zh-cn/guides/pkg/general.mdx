@@ -75,7 +75,7 @@ Kmdo 配置文件中的多个字段支持模板化。这些字段通常带有 `_
 | `.Prerelease`      | 版本预发布部分，例如 `beta`[^tag-is-semver]                                            |
 | `.RawVersion`      | 由 `{Major}.{Minor}.{Patch}` 组成 [^tag-is-semver]                                                    |
 | `.ReleaseNotes`    | 生成的发行说明在变更日志步骤执行完毕后即可获取。                          |
-| `.IsDraft`         | 如果配置中设置了 `release.draft`，则返回 `true`，否则返回 `false`。                                   |
+| `.IsDraft`         | 如果配置中设置了 ``release.draft``，则返回 `true`，否则返回 `false`。                                   |
 | `.IsSnapshot`      | 如果设置了 `--snapshot` 参数，则返回 `true`，否则返回 `false`。                                                          |
 | `.IsNightly`       | 如果设置了 `--nightly` 参数，则返回 `true`，否则返回 `false`。                                                          |
 | `.IsSingleTarget`  | 如果设置了 `--single-target`，则返回 `true`，否则返回 `false`                                        |

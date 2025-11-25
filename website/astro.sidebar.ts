@@ -66,6 +66,7 @@ export const sidebar = [
 							'guides/pkg/builds/poetry',
 							'guides/pkg/builds/uv',
 							'guides/pkg/builds/rust',
+							'guides/pkg/builds/noop',
 						]
 					}),
 					group('guides.pkg.sign', {

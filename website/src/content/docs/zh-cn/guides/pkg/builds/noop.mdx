@@ -1,0 +1,73 @@
+---
+title: noop
+sidebar:
+  label: noop
+description: 'noop building.'
+i18nReady: true
+---
+
+
+
+现在你可以通过 `noop build` 结合 Kmdo 构建纯数据的源码包！
+
+## 配置
+
+只需将 `builder` 设置为 `noop`, 即可：
+
+```yaml title=".kmdopkg.yaml"
+builds:
+  - builder: noop
+```
+
+数据包部分参见[归档包](/zh-cn/guides/pkg/archives/archives/)。
+
+## 完整示例
+
+参见kmcmake的构建配置：
+
+```yaml title="kmcmake/.kmdopkg.yaml"
+version: 2
+
+builds:
+  - builder: noop
+  
+archives:
+  - id: template
+  - name_template: "{{ .ProjectName }}-{{ .Version }}-any-any"
+    formats: [tar.gz]
+    files:
+      - src: "template"
+        dst: template
+      - src: "template/*"
+      - src: "README.md"
+      - src: "LICENSE"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: github
+  format: "{{ .SHA }}: {{ .Message }}{{ with .AuthorUsername }} (@{{ . }}){{ end }}"
+  filters:
+    exclude:
+      - "^test:"
+      - "^docs:"
+      - "^ci:"
+      - "merge"
+
+release:
+  github:
+    owner: kumose
+    name: kmcmake
+  draft: false
+  prerelease: false
+  make_latest: true
+  name_template: "v{{ .Version }}"
+  header: |
+    ## Project Template v{{ .Version }} Released 🚀
+    - Type: Pure file release
+    - Contents: template/, README.md, LICENSE
+  footer: |
+    Released by kmdo pkg.
+```
