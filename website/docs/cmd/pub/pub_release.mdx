@@ -1,0 +1,39 @@
+# kmdo pub release
+
+Releases the current project
+
+```
+kmdo pub release [flags]
+```
+
+## Options
+
+```
+      --auto-snapshot                Automatically sets --snapshot if the repository is dirty
+      --clean                        Removes the 'dist' directory
+  -f, --config string                Load configuration from file
+      --draft                        Whether to set the release to draft. Overrides release.draft in the configuration file
+      --fail-fast                    Whether to abort the release publishing on the first error
+  -h, --help                         help for release
+  -p, --parallelism int              Amount tasks to run concurrently (default: number of CPUs)
+      --release-footer string        Load custom release notes footer from a markdown file
+      --release-footer-tmpl string   Load custom release notes footer from a templated markdown file (overrides --release-footer)
+      --release-header string        Load custom release notes header from a markdown file
+      --release-header-tmpl string   Load custom release notes header from a templated markdown file (overrides --release-header)
+      --release-notes string         Load custom release notes from a markdown file (will skip kmdo changelog generation)
+      --release-notes-tmpl string    Load custom release notes from a templated markdown file (overrides --release-notes)
+      --skip strings                 Skip the given options (valid options are: after, announce, archive, aur, aur-source, before, before, before-publish, chocolatey, cloudsmith, dmg, docker, dockerhub, fury, homebrew, ko, makeself, msi, nfpm, nix, notarize, npm, publish, report-sizes, sbom, scoop, sign, snapcraft, validate, winget)
+      --snapshot                     Generate an unversioned snapshot release, skipping all validations and without publishing any artifacts (implies --skip=announce,publish,validate)
+      --timeout duration             Timeout to the entire release process (default 1h0m0s)
+```
+
+## Options inherited from parent commands
+
+```
+      --verbose   Enable verbose mode
+```
+
+## See also
+
+* [kmdo pub](pub.mdx)	 - Release engineering, simplified
+

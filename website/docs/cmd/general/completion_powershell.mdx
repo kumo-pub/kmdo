@@ -1,0 +1,39 @@
+# kmdo completion powershell
+
+Generate the autocompletion script for powershell
+
+## Synopsis
+
+Generate the autocompletion script for powershell.
+
+To load completions in your current shell session:
+
+```powershell
+	kmdo completion powershell | Out-String | Invoke-Expression
+```
+
+To load completions for every new session, add the output of the above command
+to your powershell profile.
+
+
+```powershell
+kmdo completion powershell [flags]
+```
+
+## Options
+
+```powershell
+  -h, --help              help for powershell
+      --no-descriptions   disable completion descriptions
+```
+
+## Options inherited from parent commands
+
+```powershell
+      --verbose   Enable verbose mode
+```
+
+## See also
+
+* [kmdo completion](completion.mdx)	 - Generate the autocompletion script for the specified shell
+

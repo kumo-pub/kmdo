@@ -1,0 +1,53 @@
+# kmdo pub
+
+Release engineering, simplified
+
+## Synopsis
+
+Release engineering, simplified.
+
+kmdo is a release automation tool, built with love and care by Jeff and @caarlos0 and other many contributors.
+
+Complete documentation is available at https://pub.kumose.cc/kmdo
+
+## Examples
+
+```
+
+# Initialize your project:
+kmdo pub init
+
+# Verify your configuration:
+kmdo pub check
+
+# Verify dependencies:
+kmdo pub healthcheck
+
+# Build the binaries only:
+kmdo pub build
+
+# Run a snapshot release:
+kmdo pub release --snapshot
+
+# Run a complete release:
+kmdo pub release
+		
+```
+
+## Options
+
+```
+  -h, --help      help for kmdo
+      --verbose   Enable verbose mode
+```
+
+## See also
+
+* [kmdo pub build](pub_build.mdx)	 - Builds the current project
+* [kmdo pub check](pub_check.mdx)	 - Checks if configuration is valid
+* [kmdo pub healthcheck](pub_healthcheck.mdx)	 - Checks if needed tools are installed
+* [kmdo pub init](pub_init.mdx)	 - Generates a .kmdopkg.yaml file
+* [kmdo pub jsonschema](pub_jsonschema.mdx)	 - Outputs kmdo's JSON schema
+* [kmdo pub mcp](pub_mcp.mdx)	 - Start a MCP server that provides Kmdo tools
+* [kmdo pub release](pub_release.mdx)	 - Releases the current project
+

@@ -1,0 +1,56 @@
+# Kmdo pub
+
+Kmdo can be customized by tweaking a `.kmdopkg.yaml`[^kmdopkg-yaml] file.
+
+You can generate an example config by running
+[`kmdo pub init`](/docs/cmd/pub/pub_init.mdx) or start from scratch.
+
+You can also check if your config is valid by running
+[`kmdo pub check`](/docs/cmd/pub/pub_check.mdx), which will tell you if are
+using deprecated or invalid options.
+
+## JSON Schema
+
+Kmdo also has a [jsonschema][] file, which you can use to have better
+editor support:
+
+
+    ```sh
+    https://pub.kumose.cc/static/kmdopkg/schema.json
+    ```
+
+    You can also specify it in your `.kmdopkg.yml` config file by adding a
+    comment like the following:
+    ```yaml
+    # yaml-language-server: $schema= https://pub.kumose.cc/static/kmdopkg/schema.json
+    ```
+
+
+You can also generate it for your specific version using the
+[`kmdopkg jsonschema`](/docs/cmd/pub/pub_jsonschema.mdx) command.
+
+### Pin the schema version
+
+You can pin the version by getting the schema from the GitHub tag, for example,
+for `__VERSION__` (latest):
+
+
+    ```sh
+    https://pub.kumose.cc/static/kmdopkg/__VERSION__/schema.json
+    ```
+
+
+[^kmdopkg-yaml]:
+    While most of the documentation refers to the `.kmdopkg.yaml` filename
+    for simplicity, a few different variants of it are actually accepted.
+    In order of precedence:
+
+    - `.config/kmdopkg.yml`
+    - `.config/kmdopkg.yaml`
+    - `.kmdopkg.yml`
+    - `.kmdopkg.yaml`
+    - `kmdopkg.yml`
+    - `kmdopkg.yaml`
+
+[jsonschema]: http://json-schema.org/draft/2020-12/json-schema-validation.html
+[schema]: /docs/cmd/pub/pub_jsonschema.mdx

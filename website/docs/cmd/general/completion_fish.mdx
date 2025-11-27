@@ -1,0 +1,42 @@
+# kmdo completion fish
+
+Generate the autocompletion script for fish
+
+## Synopsis
+
+Generate the autocompletion script for the fish shell.
+
+To load completions in your current shell session:
+
+```fish
+	kmdo completion fish | source
+```
+
+To load completions for every new session, execute once:
+```bash
+      kmdo completion fish > ~/.config/fish/completions/kmdo.fish
+```
+You will need to start a new shell for this setup to take effect.
+
+
+```fish
+kmdo completion fish [flags]
+```
+
+## Options
+
+```fish
+  -h, --help              help for fish
+      --no-descriptions   disable completion descriptions
+```
+
+## Options inherited from parent commands
+
+```fish
+      --verbose   Enable verbose mode
+```
+
+## See also
+
+* [kmdo completion](completion.mdx)	 - Generate the autocompletion script for the specified shell
+
