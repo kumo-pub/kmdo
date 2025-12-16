@@ -1,0 +1,90 @@
+
+# Docker Engine 安装文档（CentOS / Rocky / AlmaLinux）
+
+适用：
+
+* CentOS 7（官方已 EOL 但仍可装）
+* Rocky Linux 8 / 9
+* AlmaLinux 8 / 9
+* 其他 RHEL8/9 衍生发行版
+
+要求：
+
+* 当前用户具有 `sudo` 权限
+
+---
+
+## 1. 移除旧版本（可选）
+
+```bash
+sudo yum remove -y docker docker-client docker-client-latest docker-common \
+    docker-latest docker-latest-logrotate docker-logrotate docker-engine || true
+```
+
+---
+
+## 2. 安装依赖
+
+```bash
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+```
+
+---
+
+## 3. 添加 Docker 官方 repo
+
+### RHEL8/9（Rocky 8/9、Alma 8/9、CentOS Stream 8/9）
+
+```bash
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+```
+
+> 注：Docker 官方仍使用 centos 路径，但兼容 RHEL8/9 系列。
+
+---
+
+## 4. 安装 Docker Engine
+
+```bash
+sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+---
+
+## 5. 启动并启用 Docker
+
+```bash
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+---
+
+## 6. 将当前用户加入 docker 组（推荐）
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+> 重新登录后生效。
+
+---
+
+## 7. 验证
+
+```bash
+docker run hello-world
+```
+
+出现 `Hello from Docker!` 表示成功。
+
+---
+
+## 8. 防火墙（可选）
+
+如果你使用 firewalld：
+
+```bash
+sudo firewall-cmd --permanent --add-masquerade
+sudo firewall-cmd --reload
+```

@@ -1,0 +1,72 @@
+
+# Ansible Installation on Linux (Ubuntu / CentOS)
+
+## Ubuntu
+
+1. Update package lists:
+```bash
+sudo apt-get update
+````
+
+2. Install required packages:
+
+```bash
+sudo apt-get install -y software-properties-common
+```
+
+3. Add Ansible PPA:
+
+```bash
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+```
+
+4. Install Ansible:
+
+```bash
+sudo apt-get install -y ansible
+```
+
+5. Verify installation:
+
+```bash
+ansible --version
+```
+
+---
+
+## CentOS
+
+1. Update packages:
+
+```bash
+sudo yum update -y
+```
+
+2. Enable EPEL repository:
+
+```bash
+sudo yum install -y epel-release
+```
+
+3. Install Ansible:
+
+```bash
+sudo yum install -y ansible
+```
+
+4. Verify installation:
+
+```bash
+ansible --version
+```
+
+:::info
+
+pip install --upgrade cryptography paramiko
+:::
+
+## Notes
+
+* This setup installs Ansible on a single host for running playbooks.
+* No additional SSH configuration or Docker setup is included.
+* For multi-node management, Ansible requires SSH access to target hosts, but that is outside the scope of this document.

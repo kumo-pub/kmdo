@@ -1,0 +1,131 @@
+
+
+# Docker Engine 安装文档（Ubuntu）
+
+适用：Ubuntu 20.04 / 22.04 / 24.04
+要求：普通用户 + sudo 权限
+
+## 1. 移除旧版本（可选）
+
+```bash
+sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+```
+
+## 2. 安装依赖
+
+```bash
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+```
+
+## 3. 添加 Docker 官方 GPG Key
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+    | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+```
+
+## 4. 添加官方软件源
+
+```bash
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+## 5. 安装 Docker Engine
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+## 6. 将当前用户加入 docker 组（推荐）
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+> 需要重新登录或重新打开终端，group 权限才会生效。
+
+## 7. 验证安装
+
+```bash
+docker run hello-world
+```
+
+看到以下提示即安装成功：
+
+```
+Hello from Docker!
+```
+
+## 完整脚本
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# =====================================
+# Docker Install & Config Script for Ubuntu 20.04
+# Supports: sudo user usage & domestic mirror
+# =====================================
+
+USER_NAME=${SUDO_USER:-$(whoami)}
+
+echo "[INFO] Installing prerequisites..."
+sudo apt-get update
+sudo apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    software-properties-common
+
+echo "[INFO] Adding Docker official GPG key..."
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo "[INFO] Setting up Docker repository..."
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+echo "[INFO] Installing Docker..."
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+echo "[INFO] Adding user '$USER_NAME' to docker group..."
+sudo usermod -aG docker "$USER_NAME"
+
+echo "[INFO] Configuring Docker daemon for domestic mirror..."
+sudo tee /etc/docker/daemon.json > /dev/null <<'EOF'
+{
+  "dns": ["8.8.8.8", "1.1.1.1"],
+  "registry-mirrors": ["https://docker.m.daocloud.io"]
+}
+EOF
+
+echo "[INFO] Restarting Docker daemon..."
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+echo "[INFO] Done! Log out and log back in for group changes to take effect."
+echo "You can test with: docker run --rm hello-world"
+```
+
+```bash
+docker exec -it node2 bash
+apt update && apt install -y openssh-server sudo
+mkdir /var/run/sshd
+echo 'root:root' | chpasswd
+sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+service ssh start
+```
+```bash
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node1
+```
